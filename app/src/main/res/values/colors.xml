@@ -2,4 +2,24 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Main Colors -->
+    <color name="main">#FF0000</color>
+    <color name="main_variant">#FFFF8000</color>
+    <color name="light">#FFCC99</color>
+
+    <!-- Complementary Colors -->
+    <color name="main_complementary">#00FFFF</color> <!-- Cyan -->
+    <color name="main_variant_complementary">#0080FF</color> <!-- Blue -->
+    <color name="light_complementary">#339966</color> <!-- Green -->
+
+    <!-- Analogous Colors -->
+    <color name="main_analogous_1">#FF8000</color> <!-- Orange -->
+    <color name="main_analogous_2">#FFBF00</color> <!-- Yellow -->
+    <color name="main_variant_analogous_1">#FF00BF</color> <!-- Purple -->
+    <color name="light_analogous">#FF9933</color> <!-- Dark Orange -->
+
+    <!-- Triadic Colors -->
+    <color name="main_triadic">#00FF00</color> <!-- Green -->
+    <color name="main_variant_triadic">#80FF00</color> <!-- Lime --
 </resources>

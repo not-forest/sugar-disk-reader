@@ -6,21 +6,36 @@ edition = "2021"
 
 # Build dependencies
 [dependencies]
-log = "0.4"
-android_logger = "0.11.0"
-android-activity = { version = "0.4", features = [ "native-activity" ] }
-ndk-context = "0.1"
-ndk = "0.7"
-ndk-sys = "0.4"
-jni = "0.21"
+# Application's logic related imports.
+pwhash = "1.0.0"
 
+# Async
+tokio = { version = "1.36.0", features = ["full"]}
+
+# Firebase
+firebase-rs = { version = "2.1.0"}
+
+# Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# Logging
+android_logger = "0.13.0"
+log = "0.4"
+
+# Android target imports
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.4", features = [ "native-activity" ] }
+openssl = { version = "0.10", features = ["vendored"] }
+ndk-context = "0.1.1"
+ndk = "0.7"
+jni = "0.21"
 
 # Dynamic exporting
 [lib]
 name="sugar_jni"
 crate_type=["cdylib"]
+bench = false
 
 ####################
 # cargo apk config #
@@ -28,7 +43,7 @@ crate_type=["cdylib"]
 
 [package.metadata.android]
 # Specifies the package property of the manifest.
-package = "com.foo.bar"
+package = "com.notforest.sugar"
 
 # Specifies the array of targets to build for.
 #build_targets = [ "aarch64-linux-android", "armv7-linux-androideabi", "i686-linux-android", "x86_64-linux-android" ]
@@ -36,7 +51,7 @@ build_targets = [ "aarch64-linux-android" ]
 
 # Path to your application's resources folder.
 # If not specified, resources will not be included in the APK.
-resources = "app/src/res"
+resources = "app/src/main/res"
 
 # Path to the folder containing your application's assets.
 # If not specified, assets will not be included in the APK.

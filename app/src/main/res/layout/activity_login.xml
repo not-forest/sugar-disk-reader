@@ -61,7 +61,7 @@
                 android:inputType="textPassword" />
 
             <TextView
-                android:id="@+id/textViewForgotPassword"
+                android:id="@+id/forgotRedirect"
                 android:layout_width="159dp"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/buttonLogin"
@@ -73,7 +73,7 @@
                 android:textColor="@color/main" />
 
             <TextView
-                android:id="@+id/textViewRegister"
+                android:id="@+id/signUpRedirect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/buttonLogin"

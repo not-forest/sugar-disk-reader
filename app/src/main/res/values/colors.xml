@@ -21,5 +21,5 @@
 
     <!-- Triadic Colors -->
     <color name="main_triadic">#00FF00</color> <!-- Green -->
-    <color name="main_variant_triadic">#80FF00</color> <!-- Lime --
+    <color name="main_variant_triadic">#80FF00</color> <!-- Lime -->
 </resources>

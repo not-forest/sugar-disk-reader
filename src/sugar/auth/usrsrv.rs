@@ -23,19 +23,20 @@ pub mod service {
 
     /// Performs full application login procedure.
     ///
-    /// Performs communication with firebase server and provides full login routine.
+    /// Performs communication with firebase server and provides full login routine. Starts user's
+    /// session if data match and 
+    #[tokio::main]
     pub async fn login(mail: String, pass: String) { 
-        let handle = tokio::spawn(async move {
-            let firebase = Firebase::new(FIREBASE_URI)
-                .expect("Provided uri does not match any existing firebase project.");
-            
-            UserP::find(&firebase, mail.clone())
-        });
+         log::info!("Encountered login request with data: {:#?}", (mail, pass));
+    }
 
-        if let Ok(handle) = handle.await {
-
-        }
-        
+    /// Performs full application signup procedure.
+    ///
+    /// With data provided, creates new 'Sugar' user, while checking if such user is not already
+    /// exist.
+    #[tokio::main]
+    pub async fn signup(mail: String, pass: String, conf: String) {
+         log::info!("Encountered signup request with data: {:#?}", (mail, pass, conf));
     }
 }
 

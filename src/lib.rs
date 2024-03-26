@@ -17,13 +17,18 @@ pub mod sugar {
     ///
     /// Provides a backend to authentication service mainly via firebase API.
     pub mod auth {
+        mod structures;
+        pub mod errors;
         /// User service.
         pub mod usrsrv;
 
-        pub use usrsrv::{UserP, UserServiceError, service};
+        pub use usrsrv::service;
+        pub use structures::UserServiceStatus;
     }
     /// All external API related symbols.
     pub mod api;
+    /// Custom parsing for user's input.
+    pub mod parse;
 
     pub use api::FIREBASE_URI;
 }
@@ -38,7 +43,10 @@ pub mod android {
 
     use super::*;
 
-    use crate::sugar::auth::service::{login, signup};
+    use crate::sugar::auth::{
+        service::{login, signup},
+        UserServiceStatus,
+    };
     
     use jni::JNIEnv;
     use jni::objects::{JClass, JString};
@@ -62,9 +70,11 @@ pub mod android {
                         .build()
                 )
         );
+        log::debug!("Debug mode enabled");
+        log::info!("OK");
     }
 
-    /// Wrapper function to provide java's strings to rust interface.
+    /// Wrapper function to provide java's strings to rust signup interface.
     ///
     /// Will be called by Java's front-end, when user creates new 'Sugar' account.
     #[no_mangle]
@@ -74,24 +84,31 @@ pub mod android {
         java_mail: JString,
         java_pass: JString,
         java_conf: JString
-    ) {
+    ) -> UserServiceStatus {
+        log::info!("Begin: signup");
+        // Converting
         let mail = env.get_string(&java_mail).expect("Could not parse Java string.").into();
         let pass = env.get_string(&java_pass).expect("Could not parse Java string.").into();
         let conf = env.get_string(&java_conf).expect("Could not parse Java string.").into();
 
-        signup(mail, pass, conf); 
+        signup(mail, pass, conf) 
     }
 
+    /// Wrapper function to provide java's strings to rust login interface.
+    ///
+    /// Will be called by Java's front-end, when user creates new 'Sugar' account.
     #[no_mangle]
     pub extern fn Java_com_notforest_sugar_LoginActivity_login(
         mut env: JNIEnv,
         _: JClass,
         java_mail: JString,
         java_pass: JString,
-    ) {
+    ) -> UserServiceStatus {
+        log::info!("Begin: login");
+        // Converting
         let mail = env.get_string(&java_mail).expect("Could not parse Java string.").into();
         let pass = env.get_string(&java_pass).expect("Could not parse Java string.").into();
         
-        login(mail, pass);
+        login(mail, pass)
     }
 }

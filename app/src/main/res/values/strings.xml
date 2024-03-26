@@ -11,4 +11,13 @@
     <string name="signup">Sign Up</string>
     <string name="signup_failed">"Sign Up Failed"</string>
     <string name="login_instead">Login instead</string>
+
+    <string name="error_mail_empty">Email field cannot be empty</string>
+    <string name="error_mail_used">Provided email address is already in use. Please login instead.</string>
+    <string name="error_mail_not_found">User with provided email is not found.</string>
+    <string name="error_mail_regex">The email is in a wrong format. Please provide a correct address like: "example@gmail.com"</string>
+
+    <string name="error_pass_empty">Password field cannot be empty.</string>
+    <string name="error_pass_nomatch">Both passwords should match.</string>
+    <string name="error_pass_wrong">Wrong password provided. If you forgot your password, use the link below.</string>
 </resources>

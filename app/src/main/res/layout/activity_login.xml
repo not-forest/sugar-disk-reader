@@ -47,6 +47,15 @@
                 android:hint="@string/hint_email"
                 android:inputType="textEmailAddress" />
 
+            <TextView
+                android:id="@+id/mailErrorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/editTextEmail"
+                android:layout_marginTop="5dp"
+                android:textColor="@color/main"
+                android:visibility="gone" />
+
             <EditText
                 android:id="@+id/editTextPassword"
                 android:layout_width="match_parent"
@@ -59,6 +68,15 @@
                 android:drawablePadding="8dp"
                 android:hint="@string/hint_password"
                 android:inputType="textPassword" />
+
+            <TextView
+                android:id="@+id/passwordErrorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/editTextPassword"
+                android:layout_marginTop="5dp"
+                android:textColor="@color/main"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/forgotRedirect"

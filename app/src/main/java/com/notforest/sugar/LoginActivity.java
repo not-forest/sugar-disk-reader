@@ -6,18 +6,18 @@
 
 package com.notforest.sugar;
 
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class LoginActivity extends AppCompatActivity {
     // Loads external dynamic libraries.
@@ -31,8 +31,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // Text input values.
     EditText editTextEmail, editTextPassword;
-    // Link to login activity.
-    TextView forgotRedirect, signUpRedirect;
+    TextView forgotRedirect, signUpRedirect, mailErrorText, passwordErrorText;
     Button buttonLogin;
 
     /* Application's entry point.
@@ -56,8 +55,13 @@ public class LoginActivity extends AppCompatActivity {
         // Setting up the variables from environment.
         editTextEmail =             findViewById(R.id.editTextEmail);
         editTextPassword =          findViewById(R.id.editTextPassword);
-        signUpRedirect =             findViewById(R.id.signUpRedirect);
-        buttonLogin =              findViewById(R.id.buttonLogin);
+
+        forgotRedirect =             findViewById(R.id.forgotRedirect);
+        signUpRedirect =            findViewById(R.id.signUpRedirect);
+        mailErrorText =             findViewById(R.id.mailErrorText);
+        passwordErrorText =             findViewById(R.id.passwordErrorText);
+
+        buttonLogin =               findViewById(R.id.buttonLogin);
 
         // Setting up listeners.
         buttonLogin.setOnClickListener(new View.OnClickListener() {
@@ -67,12 +71,58 @@ public class LoginActivity extends AppCompatActivity {
                 String mail = editTextEmail.getText().toString();
                 String pass = editTextPassword.getText().toString();
 
-                // Giving control to backend.
-                switch (login(mail, pass)) {
-                    default:
+                if (ifNotEmpty(mail, pass)) {
+                    switch (login(mail, pass)) {
+                        // No error: jumping to main activity, since logged in
+                        case 0:
+                            // Note about login success.
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Logged in successfully!",
+                                    Toast.LENGTH_SHORT
+                            ).show();
 
+                            // Jumping to main activity
+                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                            break;
+
+                        default:
+                    }
                 }
             }
         });
+
+        signUpRedirect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Jumping to signup activity
+                startActivity(new Intent(LoginActivity.this, SignupActivity.class));
+            }
+        });
+    }
+
+    /* Checks if both user inputs and returns true if they are. */
+    private boolean ifNotEmpty(String m, String p) {
+        boolean not_empty = true;
+
+        // Mail field.
+        if (m.isEmpty()) {
+            mailErrorText.setText(R.string.error_mail_empty);
+            mailErrorText.setVisibility(View.VISIBLE);
+            not_empty = false;
+        } else {
+            mailErrorText.setVisibility(View.INVISIBLE);
+        }
+
+        // Password field.
+        if (p.isEmpty()) {
+            mailErrorText.setText(R.string.error_pass_empty);
+            passwordErrorText.setVisibility(View.VISIBLE);
+            not_empty = false;
+        } else {
+            passwordErrorText.setVisibility(View.INVISIBLE);
+        }
+
+        return not_empty;
     }
 }

@@ -10,7 +10,7 @@ pub mod service {
     use crate::sugar::{
         auth::{
             structures::{UserServiceStatus, UserP},
-            errors::UserServiceError,
+            errors::{UserServiceError, DataParseError},
         }, 
         parse::SugarParser, 
         FIREBASE_URI
@@ -76,7 +76,11 @@ pub mod service {
             match out {
                 // If user exist, comparing email with the provided one.
                 Ok(user) => {
-                    if user.check_pass(pass) {
+                    if !user.check_pass(pass) {
+                        // Password is wrong, returning an error.
+                        return UserServiceStatus::UserSideError(
+                            DataParseError::WrongPassword
+                        )
                     }
                 },
                 // Error.
@@ -103,12 +107,103 @@ pub mod service {
     /// With data provided, creates new 'Sugar' user, while checking if such user is not already
     /// exist.
     #[tokio::main]
-    pub(crate) async fn signup(mail: String, pass: String, conf: String) -> UserServiceStatus {
+    pub async fn signup(mail: String, pass: String, conf: String) -> UserServiceStatus {
         log::debug!("Encountered signup request with data: {:#?}", (&mail, &pass, &conf));
-    
+        let m = mail.clone();
+        let p = pass.clone();
+
+        // Parsing.
+
+        let parse_handle = tokio::spawn(async move {
+            log::debug!("Parsing email...");
+            SugarParser::parse_mail(m)?; // If mail fails, instant return of error.
+            log::debug!("Parsing password..."); 
+            SugarParser::parse_pass(p)?; // If password fails, instant return of error.
+
+            log::debug!("Parsing: OK");
+            Ok(())
+        });
+
+        // Server side.
+        
+        let signup_handle = tokio::spawn(async move {
+            log::debug!("Connecting to firebase...");
+            // Establishing new connection with firebase.
+            if let Ok(fire) = Firebase::new(FIREBASE_URI) {
+                return UserP::new(mail, pass, &fire).await
+            }
+
+            log::error!("Connection error!");
+            Err(UserServiceError::DatabaseConnectionError)
+        });
+
+        // Conclution.
+
+        // Obtaining data from parser.
+        if let Ok(out) = parse_handle.await {
+            // Checking for any parse errors.
+            if let Err(error) = out {
+                log::error!("Parsing error: {}", error);
+                
+                return UserServiceStatus::UserSideError(
+                    error
+                )
+            }
+        } else {
+            log::error!("Internal server error: Tokio task did not exit normally.");
+
+            // Unable to get future from parser task.
+            return UserServiceStatus::ServerSideError(
+                UserServiceError::InputParseError
+            )
+        }
+
+        // Obtaining data from the server. 
+        if let Ok(out) = signup_handle.await {
+            // Checking for any login errors and comparing provided info.
+            if let Err(error) = out {
+                log::error!("Serverside error: {}", error);
+                return UserServiceStatus::ServerSideError(
+                    error
+                )
+            }
+        } else {
+            // Unable to get future from login task.
+            return UserServiceStatus::ServerSideError(
+                UserServiceError::UserGetError
+            )
+        }
+
         log::info!("Signup: OK");
         UserServiceStatus::NoError
     }
+
+    // Updates user's data by writing changed fields into the Firebase.
+    /* #[tokio::main]
+    pub async fn update_user<F>(f: F) -> UserServiceStatus where 
+        F: FnOnce(&mut UserP) 
+    {
+        log::debug!("Encountered user update request.");
+
+        if let Ok(fire) = Firebase::new(FIREBASE_URI) {
+            // Getting local user's info from the local storage.
+            let id = LocalStorage::get_user();
+
+            if let Err(error) = UserP::set(id, &fire, f).await {
+                return UserServiceStatus::ServerSideError(
+                    UserServiceError::UserSetError
+                )
+            }
+        } else {
+            log::error!("Connection error!");
+            return UserServiceStatus::ServerSideError(
+                UserServiceError::DatabaseConnectionError
+            )
+        }
+
+        log::info!("Signup: OK");
+        UserServiceStatus::NoError 
+    } */
 }
 
 

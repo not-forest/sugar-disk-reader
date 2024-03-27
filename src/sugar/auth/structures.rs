@@ -31,6 +31,16 @@ pub enum UserServiceStatus {
     UserSideError(DataParseError),
 }
 
+impl Into<u8> for UserServiceStatus {
+    fn into(self) -> u8 {
+        match self {
+            Self::NoError => 0,
+            Self::UserSideError(err) => err as u8,
+            Self::ServerSideError(err) => err as u8,
+        }
+    }
+}
+
 /// Generic model of user entry within firebase database.
 ///
 /// This user model is required for custom configurations, accesses and application

@@ -72,6 +72,7 @@ public class LoginActivity extends AppCompatActivity {
                 String pass = editTextPassword.getText().toString();
 
                 if (ifNotEmpty(mail, pass)) {
+                    // Rust's backend function will return one of many defined status codes.
                     switch (login(mail, pass)) {
                         // No error: jumping to main activity, since logged in
                         case 0:
@@ -86,7 +87,51 @@ public class LoginActivity extends AppCompatActivity {
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             break;
 
-                        default:
+                        // Internal server error. This status code can only be obtained from signup function.
+                        case 1:
+                        case 3:
+                        case 4:
+                            // Note about the problem.
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Internal server error: obtained unreachable status code.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                            break;
+                        // User's email not found.
+                        case 2:
+                            mailErrorText.setText(R.string.error_mail_not_found);
+                            mailErrorText.setVisibility(View.VISIBLE);
+                        case 5:
+                            // Note about the problem.
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Internal error, unable to parse provided data. Please make sure provided info is right.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                            break;
+                        // Unable to connect to database.
+                        case 6:
+                            // Note about the problem.
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Internal error, unable to connect to database, please check your internet connection.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                            break;
+                        // Wrong email regex.
+                        case 10:
+                            mailErrorText.setText(R.string.error_mail_regex);
+                            mailErrorText.setVisibility(View.VISIBLE);
+                            break;
+                        case 11:
+                            passwordErrorText.setText(R.string.error_pass_wrong);
+                            passwordErrorText.setVisibility(View.VISIBLE);
+                            break;
+                        case 12:
+                            passwordErrorText.setText(R.string.error_pass_nomatch);
+                            passwordErrorText.setVisibility(View.VISIBLE);
+                            break;
                     }
                 }
             }

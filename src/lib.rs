@@ -29,6 +29,8 @@ pub mod sugar {
     pub mod api;
     /// Custom parsing for user's input.
     pub mod parse;
+    /// All storage related functions.
+    //pub mod storage;
 
     pub use api::FIREBASE_URI;
 }
@@ -84,14 +86,14 @@ pub mod android {
         java_mail: JString,
         java_pass: JString,
         java_conf: JString
-    ) -> UserServiceStatus {
+    ) -> u8 {
         log::info!("Begin: signup");
         // Converting
         let mail = env.get_string(&java_mail).expect("Could not parse Java string.").into();
         let pass = env.get_string(&java_pass).expect("Could not parse Java string.").into();
         let conf = env.get_string(&java_conf).expect("Could not parse Java string.").into();
 
-        signup(mail, pass, conf) 
+        signup(mail, pass, conf).into() 
     }
 
     /// Wrapper function to provide java's strings to rust login interface.
@@ -103,12 +105,12 @@ pub mod android {
         _: JClass,
         java_mail: JString,
         java_pass: JString,
-    ) -> UserServiceStatus {
+    ) -> u8 {
         log::info!("Begin: login");
         // Converting
         let mail = env.get_string(&java_mail).expect("Could not parse Java string.").into();
         let pass = env.get_string(&java_pass).expect("Could not parse Java string.").into();
         
-        login(mail, pass)
+        login(mail, pass).into()
     }
 }

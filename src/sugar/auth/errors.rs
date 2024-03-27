@@ -47,6 +47,8 @@ pub enum DataParseError {
     MailRegexError =            10,
     /// Will be provided if the password conditions are not met.
     PasswordConditionsError =   11,
+    /// Password does not match.
+    WrongPassword =             12,
 }
 
 impl Error for DataParseError {}
@@ -56,6 +58,7 @@ impl Display for DataParseError {
         match self {
             MailRegexError =>          write!(f, "Wrong email regex."),
             PasswordConditionsError => write!(f, "Password conditions are not met."),
+            WrongPassword =>           write!(f, "Provided password does not match."),
         }
     }
 }

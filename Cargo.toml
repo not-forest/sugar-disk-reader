@@ -14,8 +14,9 @@ once_cell = "1.19.0"
 # Async
 tokio = { version = "1.36.0", features = ["full"]}
 
-# Firebase
-firebase-rs = { version = "2.1.0"}
+# Firebase and web
+firebase-auth-sdk = "0.1.0"
+#firebase-rs = { version = "2.1.0"}
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

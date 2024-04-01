@@ -17,20 +17,19 @@ pub mod sugar {
     ///
     /// Provides a backend to authentication service mainly via firebase API.
     pub mod auth {
-        mod structures;
-        pub mod errors;
         /// User service.
         pub mod usrsrv;
 
         pub use usrsrv::service;
-        pub use structures::UserServiceStatus;
     }
+    /// Application defined errors with status codes.
+    pub mod errors;
     /// All external API related symbols.
     pub mod api;
     /// Custom parsing for user's input.
     pub mod parse;
     /// All storage related functions.
-    //pub mod storage;
+    pub mod storage;
 
     pub use api::FIREBASE_URI;
 }
@@ -41,21 +40,18 @@ pub mod sugar {
 #[cfg(target_os = "android")]
 #[allow(non_snake_case)]
 pub mod android {
-    use std::env;
+    use std::{env, mem};
 
     use super::*;
 
-    use crate::sugar::auth::{
-        service::{login, signup},
-        UserServiceStatus,
-    };
+    use crate::sugar::auth::service::{login, signup};
     
     use jni::JNIEnv;
     use jni::objects::{JClass, JString};
-    use jni::sys::jstring;
 
     use log::LevelFilter;
     use android_logger::{Config, FilterBuilder};
+    use sugar::auth::usrsrv::UserServiceStatus;
 
     // EXTERNS
     /// Initialization code from rust's side.
@@ -65,7 +61,7 @@ pub mod android {
         android_logger::init_once(
             Config::default()
                 .with_max_level(LevelFilter::Trace)                     // limit log level
-                .with_tag("RUST_BACKEND")                               // logs will show under mytag tag
+                .with_tag("RUST_BACKEND")                               
                 .with_filter(                                           // configure messages for specific crate
                     FilterBuilder::new()
                         .parse("debug,hello::crate=error")

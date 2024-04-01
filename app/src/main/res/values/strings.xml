@@ -18,6 +18,8 @@
     <string name="error_mail_regex">The email is in a wrong format. Please provide a correct address like: "example@gmail.com"</string>
 
     <string name="error_pass_empty">Password field cannot be empty.</string>
+    <string name="error_confirm_password_empty">Please confirm the password you provided.</string>
     <string name="error_pass_nomatch">Both passwords should match.</string>
     <string name="error_pass_wrong">Wrong password provided. If you forgot your password, use the link below.</string>
+    <string name="error_pass_weak">The password is too weak. Make sure it is at least 6 characters long.</string>
 </resources>

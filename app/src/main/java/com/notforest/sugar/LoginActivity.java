@@ -72,66 +72,47 @@ public class LoginActivity extends AppCompatActivity {
                 String pass = editTextPassword.getText().toString();
 
                 if (ifNotEmpty(mail, pass)) {
+                    // Giving control to backend.
+                    int output = login(mail, pass);
                     // Rust's backend function will return one of many defined status codes.
-                    switch (login(mail, pass)) {
-                        // No error: jumping to main activity, since logged in
+                    switch (output) {
                         case 0:
-                            // Note about login success.
+                            // Note about signup success.
                             Toast.makeText(
                                     LoginActivity.this,
-                                    "Logged in successfully!",
+                                    "Welcome " + mail + ". Happy reading :)))",
                                     Toast.LENGTH_SHORT
                             ).show();
 
-                            // Jumping to main activity
+                            // Jumping to login activity
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             break;
-
-                        // Internal server error. This status code can only be obtained from signup function.
-                        case 1:
-                        case 3:
-                        case 4:
-                            // Note about the problem.
-                            Toast.makeText(
-                                    LoginActivity.this,
-                                    "Internal server error: obtained unreachable status code.",
-                                    Toast.LENGTH_LONG
-                            ).show();
-                            break;
-                        // User's email not found.
-                        case 2:
-                            mailErrorText.setText(R.string.error_mail_not_found);
-                            mailErrorText.setVisibility(View.VISIBLE);
-                        case 5:
-                            // Note about the problem.
-                            Toast.makeText(
-                                    LoginActivity.this,
-                                    "Internal error, unable to parse provided data. Please make sure provided info is right.",
-                                    Toast.LENGTH_LONG
-                            ).show();
-                            break;
-                        // Unable to connect to database.
-                        case 6:
-                            // Note about the problem.
-                            Toast.makeText(
-                                    LoginActivity.this,
-                                    "Internal error, unable to connect to database, please check your internet connection.",
-                                    Toast.LENGTH_LONG
-                            ).show();
-                            break;
-                        // Wrong email regex.
                         case 10:
                             mailErrorText.setText(R.string.error_mail_regex);
                             mailErrorText.setVisibility(View.VISIBLE);
                             break;
-                        case 11:
+                        case 30:
+                            mailErrorText.setText(R.string.error_mail_not_found);
+                            mailErrorText.setVisibility(View.VISIBLE);
+                            break;
+                        case 31:
                             passwordErrorText.setText(R.string.error_pass_wrong);
                             passwordErrorText.setVisibility(View.VISIBLE);
                             break;
-                        case 12:
-                            passwordErrorText.setText(R.string.error_pass_nomatch);
-                            passwordErrorText.setVisibility(View.VISIBLE);
+                        case 32:
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Your 'Sugar' account was disabled due to strange activity from this device. Please contact administration for further support.",
+                                    Toast.LENGTH_LONG
+                            ).show();
                             break;
+                        default:
+                            // Internal error.
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Internal error has occur",
+                                    Toast.LENGTH_LONG
+                            ).show();
                     }
                 }
             }

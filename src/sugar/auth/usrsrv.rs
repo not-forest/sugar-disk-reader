@@ -1,21 +1,30 @@
-//! Module that provides comunication with firebase's realtime database via it's API.
+//! Module that provides communication with firebase's real time database via it's API.
 //!
-//! This module handles all events related to user authentifications, which includes logins,
+//! This module handles all events related to user authentications, which includes logins,
 //! registration and modifications requested by users.
 
-/// Module which contains all service funcions related to user authentification.
+use crate::sugar::errors::{InternalError, SignupError, LoginError};
+
+/// Special wrapper around service status number, that will be returned to the front-end.
+#[repr(u8)]
+pub enum UserServiceStatus {
+    /// Status which indicates that everything went right.
+    NoError = 0,
+    /// Error, which comes from the application itself.
+    InternalError(InternalError),
+    /// Errors from the firebase server.
+    SignupError(SignupError),
+    LoginError(LoginError),
+}
+
+/// Module which contains all service functions related to user authentications.
 pub mod service {
-    use firebase_rs::Firebase;
+    use firebase_auth_sdk::FireAuth;
+    use pwhash::bcrypt;
 
-    use crate::sugar::{
-        auth::{
-            structures::{UserServiceStatus, UserP},
-            errors::{UserServiceError, DataParseError},
-        }, 
-        parse::SugarParser, 
-        FIREBASE_URI
-    };
-
+    use super::UserServiceStatus;
+    use crate::sugar::api::FIREBASE_API_KEY;
+    use crate::sugar::errors::InternalError;
 
     /// Performs full application login procedure.
     ///
@@ -24,82 +33,35 @@ pub mod service {
     #[tokio::main]
     pub async fn login(mail: String, pass: String) -> UserServiceStatus { 
         log::debug!("Encountered login request with data: {:#?}", (&mail, &pass));
-        let m = mail.clone();
-
-        // Parsing.
-        let parse_handle = tokio::spawn(async move {
-            log::debug!("Parsing email...");
-            SugarParser::parse_mail(m)?; // If mail fails, instant return of error.
-           
-            log::debug!("Parsing: OK");
-            Ok(())
-        });
-
-        // Server side.
         
-        let login_handle = tokio::spawn(async move {
-            log::debug!("Connecting to firebase...");
-            // Connecting to Firebase.
-            if let Ok(fire) = Firebase::new(FIREBASE_URI) {
-                // Trying to obtain a user by mail.
-                return UserP::find(&fire, mail).await
-            }
+        // Authentications service.
+        let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
+        match bcrypt::hash(pass) {
+            Ok(pass) => {
+                // Parsing an output from firebase server.
+                match auth.sign_in_email(&mail, &pass, true).await {
+                    Ok(res) => {
+                        log::debug!("Obtained response: {:#?}", res);
 
-            log::error!("Connection error!");
-            Err(UserServiceError::DatabaseConnectionError)
-        });
+                        log::info!("Login: OK");
+                        UserServiceStatus::NoError
+                    },
+                    Err(err) => {
+                        log::error!("Login error: {}", err);
 
-        // Conclution.
+                        UserServiceStatus::LoginError(err.into())
+                    },
+                }
+            },
+            Err(err) => {
+                log::error!("Hash error: {}", err);
 
-        // Obtaining data from parser.
-        if let Ok(out) = parse_handle.await {
-            // Checking for any parse errors.
-            if let Err(error) = out {
-                log::error!("Parsing error: {}", error);
-                
-                return UserServiceStatus::UserSideError(
-                    error
+                // Throw error for now. Maybe strip the symbols later.
+                UserServiceStatus::InternalError(
+                    InternalError::HASH_ERROR
                 )
             }
-        } else {
-            log::error!("Internal server error: Tokio task did not exit normally.");
-
-            // Unable to get future from parser task.
-            return UserServiceStatus::ServerSideError(
-                UserServiceError::InputParseError
-            )
         }
-
-        // Obtaining data from login service.
-        if let Ok(out) = login_handle.await {
-            // Checking for any login errors and comparing provided info.
-            match out {
-                // If user exist, comparing email with the provided one.
-                Ok(user) => {
-                    if !user.check_pass(pass) {
-                        // Password is wrong, returning an error.
-                        return UserServiceStatus::UserSideError(
-                            DataParseError::WrongPassword
-                        )
-                    }
-                },
-                // Error.
-                Err(error) => {
-                    log::error!("Serverside error: {}", error);
-                    return UserServiceStatus::ServerSideError(
-                        error
-                    )
-                },
-            }
-        } else {
-            // Unable to get future from login task.
-            return UserServiceStatus::ServerSideError(
-                UserServiceError::UserGetError
-            )
-        }
-
-        log::info!("Login: OK");
-        UserServiceStatus::NoError
     }
 
     /// Performs full application signup procedure.
@@ -109,101 +71,47 @@ pub mod service {
     #[tokio::main]
     pub async fn signup(mail: String, pass: String, conf: String) -> UserServiceStatus {
         log::debug!("Encountered signup request with data: {:#?}", (&mail, &pass, &conf));
-        let m = mail.clone();
-        let p = pass.clone();
-
-        // Parsing.
-
-        let parse_handle = tokio::spawn(async move {
-            log::debug!("Parsing email...");
-            SugarParser::parse_mail(m)?; // If mail fails, instant return of error.
-            log::debug!("Parsing password..."); 
-            SugarParser::parse_pass(p)?; // If password fails, instant return of error.
-
-            log::debug!("Parsing: OK");
-            Ok(())
-        });
-
-        // Server side.
         
-        let signup_handle = tokio::spawn(async move {
-            log::debug!("Connecting to firebase...");
-            // Establishing new connection with firebase.
-            if let Ok(fire) = Firebase::new(FIREBASE_URI) {
-                return UserP::new(mail, pass, &fire).await
-            }
+        // Authentications service.
+        let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
-            log::error!("Connection error!");
-            Err(UserServiceError::DatabaseConnectionError)
-        });
+        match bcrypt::hash(pass) {
+            Ok(pass) => {
+                // Parsing an output from firebase server.
+                match auth.sign_up_email(&mail, &pass, true).await {
+                    Ok(res) => {
+                        log::debug!("Obtained response: {:#?}", res);
 
-        // Conclution.
+                        log::info!("Signup: OK");
+                        UserServiceStatus::NoError
+                    },
+                    Err(err) => {
+                        log::error!("Sign up error: {}", err);
 
-        // Obtaining data from parser.
-        if let Ok(out) = parse_handle.await {
-            // Checking for any parse errors.
-            if let Err(error) = out {
-                log::error!("Parsing error: {}", error);
-                
-                return UserServiceStatus::UserSideError(
-                    error
+                        UserServiceStatus::SignupError(err.into())
+                    },
+                }
+            },
+            Err(err) => {
+                log::error!("Hash error: {}", err);
+
+                // Throw error for now. Maybe strip the symbols later.
+                UserServiceStatus::InternalError(
+                    InternalError::HASH_ERROR
                 )
             }
-        } else {
-            log::error!("Internal server error: Tokio task did not exit normally.");
-
-            // Unable to get future from parser task.
-            return UserServiceStatus::ServerSideError(
-                UserServiceError::InputParseError
-            )
         }
-
-        // Obtaining data from the server. 
-        if let Ok(out) = signup_handle.await {
-            // Checking for any login errors and comparing provided info.
-            if let Err(error) = out {
-                log::error!("Serverside error: {}", error);
-                return UserServiceStatus::ServerSideError(
-                    error
-                )
-            }
-        } else {
-            // Unable to get future from login task.
-            return UserServiceStatus::ServerSideError(
-                UserServiceError::UserGetError
-            )
-        }
-
-        log::info!("Signup: OK");
-        UserServiceStatus::NoError
     }
-
-    // Updates user's data by writing changed fields into the Firebase.
-    /* #[tokio::main]
-    pub async fn update_user<F>(f: F) -> UserServiceStatus where 
-        F: FnOnce(&mut UserP) 
-    {
-        log::debug!("Encountered user update request.");
-
-        if let Ok(fire) = Firebase::new(FIREBASE_URI) {
-            // Getting local user's info from the local storage.
-            let id = LocalStorage::get_user();
-
-            if let Err(error) = UserP::set(id, &fire, f).await {
-                return UserServiceStatus::ServerSideError(
-                    UserServiceError::UserSetError
-                )
-            }
-        } else {
-            log::error!("Connection error!");
-            return UserServiceStatus::ServerSideError(
-                UserServiceError::DatabaseConnectionError
-            )
-        }
-
-        log::info!("Signup: OK");
-        UserServiceStatus::NoError 
-    } */
 }
 
-
+// Formatting each error as a status code.
+impl Into<u8> for UserServiceStatus {
+    fn into(self) -> u8 {
+        match self {
+            Self::NoError => 0,
+            Self::InternalError(err) => err as u8,
+            Self::SignupError(err) => err as u8,
+            Self::LoginError(err) => err as u8,
+        }
+    }
+}

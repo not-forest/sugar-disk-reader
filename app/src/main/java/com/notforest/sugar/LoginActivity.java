@@ -92,14 +92,10 @@ public class LoginActivity extends AppCompatActivity {
                             mailErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 30:
-                            mailErrorText.setText(R.string.error_mail_not_found);
+                            mailErrorText.setText(R.string.error_invalid_credentials);
                             mailErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 31:
-                            passwordErrorText.setText(R.string.error_pass_wrong);
-                            passwordErrorText.setVisibility(View.VISIBLE);
-                            break;
-                        case 32:
                             Toast.makeText(
                                     LoginActivity.this,
                                     "Your 'Sugar' account was disabled due to strange activity from this device. Please contact administration for further support.",

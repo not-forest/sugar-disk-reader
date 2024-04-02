@@ -4,7 +4,6 @@
 //! target computer.
 
 use regex::Regex;
-use once_cell::sync::Lazy;
 
 /// Struct which handles all parsing activity related to user input and data.
 ///

@@ -42,8 +42,14 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        String fileDir = getFilesDir().toString();
+        String cacheDir = getCacheDir().toString();
+        String extFileDir = getExternalFilesDir(null).toString();
+        String extCacheDir = getExternalCacheDir().toString();
+
         // Initialization.
-        SugarInit.rustInit(); // Rust initialization.
+        SugarInit.rustInit(fileDir, cacheDir, extFileDir, extCacheDir); // Rust initialization.
     }
 
     @Override

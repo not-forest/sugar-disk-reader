@@ -20,11 +20,9 @@ pub enum UserServiceStatus {
 /// Module which contains all service functions related to user authentications.
 pub mod service {
     use firebase_auth_sdk::FireAuth;
-    use pwhash::bcrypt;
 
     use super::UserServiceStatus;
     use crate::sugar::api::FIREBASE_API_KEY;
-    use crate::sugar::errors::InternalError;
 
     /// Performs full application login procedure.
     ///
@@ -36,31 +34,20 @@ pub mod service {
         
         // Authentications service.
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
-        match bcrypt::hash(pass) {
-            Ok(pass) => {
-                // Parsing an output from firebase server.
-                match auth.sign_in_email(&mail, &pass, true).await {
-                    Ok(res) => {
-                        log::debug!("Obtained response: {:#?}", res);
 
-                        log::info!("Login: OK");
-                        UserServiceStatus::NoError
-                    },
-                    Err(err) => {
-                        log::error!("Login error: {}", err);
+        // Parsing an output from firebase server.
+        match auth.sign_in_email(&mail, &pass, true).await {
+            Ok(res) => {
+                log::debug!("Obtained response: {:#?}", res);
 
-                        UserServiceStatus::LoginError(err.into())
-                    },
-                }
+                log::info!("Login: OK");
+                UserServiceStatus::NoError
             },
             Err(err) => {
-                log::error!("Hash error: {}", err);
+                log::error!("Login error: {}", err);
 
-                // Throw error for now. Maybe strip the symbols later.
-                UserServiceStatus::InternalError(
-                    InternalError::HASH_ERROR
-                )
-            }
+                UserServiceStatus::LoginError(err.into())
+            },
         }
     }
 
@@ -75,31 +62,19 @@ pub mod service {
         // Authentications service.
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
-        match bcrypt::hash(pass) {
-            Ok(pass) => {
-                // Parsing an output from firebase server.
-                match auth.sign_up_email(&mail, &pass, true).await {
-                    Ok(res) => {
-                        log::debug!("Obtained response: {:#?}", res);
+        // Parsing an output from firebase server.
+        match auth.sign_up_email(&mail, &pass, true).await {
+            Ok(res) => {
+                log::debug!("Obtained response: {:#?}", res);
 
-                        log::info!("Signup: OK");
-                        UserServiceStatus::NoError
-                    },
-                    Err(err) => {
-                        log::error!("Sign up error: {}", err);
-
-                        UserServiceStatus::SignupError(err.into())
-                    },
-                }
+                log::info!("Signup: OK");
+                UserServiceStatus::NoError
             },
             Err(err) => {
-                log::error!("Hash error: {}", err);
+                log::error!("Sign up error: {}", err);
 
-                // Throw error for now. Maybe strip the symbols later.
-                UserServiceStatus::InternalError(
-                    InternalError::HASH_ERROR
-                )
-            }
+                UserServiceStatus::SignupError(err.into())
+            },
         }
     }
 }

@@ -22,7 +22,9 @@ pub mod service {
     use firebase_auth_sdk::FireAuth;
 
     use super::UserServiceStatus;
-    use crate::sugar::api::FIREBASE_API_KEY;
+    use crate::sugar::{
+        api::FIREBASE_API_KEY, errors::StorageError, storage::LocalStorage
+    };
 
     /// Performs full application login procedure.
     ///
@@ -35,20 +37,41 @@ pub mod service {
         // Authentications service.
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
-        // Parsing an output from firebase server.
-        match auth.sign_in_email(&mail, &pass, true).await {
-            Ok(res) => {
-                log::debug!("Obtained response: {:#?}", res);
+        'main: loop {
+            // Parsing an output from firebase server.
+            return match auth.sign_in_email(&mail, &pass, true).await {
+                Ok(res) => {
+                    log::debug!("Obtained response: {:#?}", res);
 
-                log::info!("Login: OK");
-                UserServiceStatus::NoError
-            },
-            Err(err) => {
-                log::error!("Login error: {}", err);
+                    // Writing newest response to the local storage for use later.
+                    'inner: loop {
+                        if let Err(err) = LocalStorage::write(&res, "login_response") {
+                            match err {
+                                // It is better to retry if our write was interrupted at that point.
+                                StorageError::INTERRUPTED => continue 'inner,
+                                // Obtained bad data for some reason. Retrying the whole procedure.
+                                StorageError::NO_DATA | StorageError::BAD_DATA => continue 'main,
+                                _ => (),
+                            }
+                        }
 
-                UserServiceStatus::LoginError(err.into())
-            },
+                        log::info!("Latest response info saved.");
+                        break
+                    }
+
+                    log::info!("Login: OK");
+                    UserServiceStatus::NoError
+                },
+                Err(err) => {
+                    let converted = err.clone().into();
+                    log::error!("Login error: {}", &converted);
+                    log::error!("Details: {}", &err);
+
+                    UserServiceStatus::SignupError(converted)
+                },
+            }
         }
+
     }
 
     /// Performs full application signup procedure.
@@ -62,19 +85,39 @@ pub mod service {
         // Authentications service.
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
-        // Parsing an output from firebase server.
-        match auth.sign_up_email(&mail, &pass, true).await {
-            Ok(res) => {
-                log::debug!("Obtained response: {:#?}", res);
+        'main: loop {
+            // Parsing an output from firebase server.
+            return match auth.sign_up_email(&mail, &pass, true).await {
+                Ok(res) => {
+                    log::debug!("Obtained response: {:#?}", res);
 
-                log::info!("Signup: OK");
-                UserServiceStatus::NoError
-            },
-            Err(err) => {
-                log::error!("Sign up error: {}", err);
+                    // Writing newest response to the local storage for use later.
+                    'inner: loop {
+                        if let Err(err) = LocalStorage::write(&res, "signup_response") {
+                            match err {
+                                // It is better to retry if our write was interrupted at that point.
+                                StorageError::INTERRUPTED => continue 'inner,
+                                // Obtained bad data for some reason. Retrying the whole procedure.
+                                StorageError::NO_DATA | StorageError::BAD_DATA => continue 'main,
+                                _ => (),
+                            }
+                        }
 
-                UserServiceStatus::SignupError(err.into())
-            },
+                        log::info!("Latest response info saved.");
+                        break
+                    }
+
+                    log::info!("Signup: OK");
+                    UserServiceStatus::NoError
+                },
+                Err(err) => {
+                    let converted = err.clone().into();
+                    log::error!("Signup error: {}", &converted);
+                    log::error!("Details: {}", &err);
+
+                    UserServiceStatus::SignupError(converted)
+                },
+            }
         }
     }
 }

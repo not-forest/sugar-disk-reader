@@ -40,23 +40,31 @@ pub mod sugar {
 #[cfg(target_os = "android")]
 #[allow(non_snake_case)]
 pub mod android {
-    use std::{env, mem};
+    use std::path::Path;
 
     use super::*;
 
-    use crate::sugar::auth::service::{login, signup};
     
     use jni::JNIEnv;
     use jni::objects::{JClass, JString};
 
     use log::LevelFilter;
     use android_logger::{Config, FilterBuilder};
+    use sugar::auth::service::{login, signup};
     use sugar::auth::usrsrv::UserServiceStatus;
+    use sugar::storage::{FILES_DIR, CACHE_DIR, EXT_FILES_DIR, EXT_CACHE_DIR};
 
     // EXTERNS
     /// Initialization code from rust's side.
     #[no_mangle]
-    pub extern fn Java_com_notforest_sugar_SugarInit_rustInit() {
+    pub extern fn Java_com_notforest_sugar_SugarInit_rustInit(
+        mut env: JNIEnv, 
+        _: JClass, 
+        files_dir: JString,
+        cache_dir: JString,
+        ext_files_dir: JString,
+        ext_cache_dir: JString,
+    ) {
         // Initializing logger.
         android_logger::init_once(
             Config::default()
@@ -68,6 +76,25 @@ pub mod android {
                         .build()
                 )
         );
+        log::info!("Logger initialized");
+
+        // Converting
+        let files_dir: String = env.get_string(&files_dir).expect("Could not parse Java string.").into();
+        let cache_dir: String = env.get_string(&cache_dir).expect("Could not parse Java string.").into();
+        let ext_files_dir: String = env.get_string(&ext_files_dir).expect("Could not parse Java string.").into();
+        let ext_cache_dir: String = env.get_string(&ext_cache_dir).expect("Could not parse Java string.").into();
+ 
+        log::info!("Files directory at: {}", files_dir);
+        log::info!("Cache directory at: {}", cache_dir);
+        log::info!("External files directory at: {}", ext_files_dir);
+        log::info!("External cache directory at: {}", ext_cache_dir);
+
+        // Getting info about directories from the environment.
+        FILES_DIR.write().unwrap().push(Path::new(files_dir.as_str()));
+        CACHE_DIR.write().unwrap().push(Path::new(cache_dir.as_str()));
+        EXT_FILES_DIR.write().unwrap().push(Path::new(ext_files_dir.as_str()));
+        EXT_CACHE_DIR.write().unwrap().push(Path::new(ext_cache_dir.as_str()));
+
         log::debug!("Debug mode enabled");
         log::info!("OK");
     }

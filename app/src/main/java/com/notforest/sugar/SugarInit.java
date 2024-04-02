@@ -12,5 +12,5 @@ public class SugarInit {
 
     // Native JNI interface for Rust backend.
     /* Initialized all important tasks on Rust's backend side. */
-    public static native void rustInit();
+    public static native void rustInit(final String filesDir, final String cacheDir, final String extFilesDir, final String extCacheDir);
 }

@@ -13,9 +13,6 @@ pub enum InternalError {
     TOKIO_THREAD_ERROR = 1,
     /// Will occur if unable to connect to some service. This is most likely a networking issue.
     NETWORK_ERROR = 2,
-    /// Really unlikely to occur, hovewer possible is the password provided contains some
-    /// unparseble characters.
-    HASH_ERROR = 3,
 }
 
 /// Errors which occur during signup.
@@ -40,11 +37,9 @@ pub enum LoginError {
     /// Password is too short.
     INVALID_PASS = 11,
     /// There is no user in firebase auth system with provided email.
-    EMAIL_NOT_FOUND = 30,
-    /// The provided password is not valid.
-    INVALID_PASSWORD = 31,
+    INVALID_LOGIN_CREDENTIALS = 30,
     /// User was disabled by an administrator.
-    USER_DISABLED = 32,
+    USER_DISABLED = 31,
 }
 
 impl Into<SignupError> for Error {
@@ -86,12 +81,8 @@ impl Into<LoginError> for Error {
                     return LoginError::INVALID_PASS
 
                 }
-                if s.contains("EMAIL_NOT_FOUND") {
-                    return LoginError::EMAIL_NOT_FOUND
-
-                }
                 if s.contains("INVALID_LOGIN_CREDENTIALS") {
-                    return LoginError::INVALID_PASSWORD
+                    return LoginError::INVALID_LOGIN_CREDENTIALS
 
                 }
                 if s.contains("USER_DISABLED") {

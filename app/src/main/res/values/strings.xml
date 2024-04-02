@@ -14,12 +14,11 @@
 
     <string name="error_mail_empty">Email field cannot be empty</string>
     <string name="error_mail_used">Provided email address is already in use. Please login instead.</string>
-    <string name="error_mail_not_found">User with provided email is not found.</string>
     <string name="error_mail_regex">The email is in a wrong format. Please provide a correct address like: "example@gmail.com"</string>
 
     <string name="error_pass_empty">Password field cannot be empty.</string>
     <string name="error_confirm_password_empty">Please confirm the password you provided.</string>
     <string name="error_pass_nomatch">Both passwords should match.</string>
-    <string name="error_pass_wrong">Wrong password provided. If you forgot your password, use the link below.</string>
     <string name="error_pass_weak">The password is too weak. Make sure it is at least 6 characters long.</string>
+    <string name="error_invalid_credentials">Either email or password is wrong. Please make sure you wrote everything right.</string>
 </resources>

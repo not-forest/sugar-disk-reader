@@ -32,7 +32,7 @@ impl LocalStorage {
     pub fn write(data: &impl Serialize, dest: &'static str) -> Result<usize, StorageError> {
         let dest = Path::new(
             FILES_DIR.read().unwrap().as_ref()
-        ).with_extension(dest).with_extension(".json");
+        ).join(dest.to_owned()).with_extension("json");
 
         let out = {
             if let Ok(data) = serde_json::to_string(data).as_ref() {
@@ -75,7 +75,7 @@ impl LocalStorage {
     pub fn read<T: DeserializeOwned>(dest: &'static str) -> Result<T, StorageError> { 
         let dest = Path::new(
             FILES_DIR.read().unwrap().as_ref()
-        ).with_extension(dest).with_extension(".json");
+        ).join(dest.to_owned()).with_extension("json");
         
         let out = {
             log::info!("Reading data from local storage: {}", dest.to_string_lossy());

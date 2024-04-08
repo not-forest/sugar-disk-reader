@@ -50,7 +50,7 @@ pub mod android {
 
     use log::LevelFilter;
     use android_logger::{Config, FilterBuilder};
-    use sugar::auth::service::{login, signup};
+    use sugar::auth::service::{fast_login, login, signup};
     use sugar::auth::usrsrv::UserServiceStatus;
     use sugar::storage::{FILES_DIR, CACHE_DIR, EXT_FILES_DIR, EXT_CACHE_DIR};
 
@@ -117,6 +117,16 @@ pub mod android {
         let conf = env.get_string(&java_conf).expect("Could not parse Java string.").into();
 
         signup(mail, pass, conf).into() 
+    }
+
+    /// Fast login method by current token credentials.
+    ///
+    /// Will be called by Java's front-end, when user creates new 'Sugar' account.
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_LoginActivity_loginFast() -> u8 {
+        log::info!("Begin: login");
+
+        fast_login().into()
     }
 
     /// Wrapper function to provide java's strings to rust login interface.

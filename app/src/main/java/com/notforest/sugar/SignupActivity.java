@@ -114,6 +114,14 @@ public class SignupActivity extends AppCompatActivity {
                 }
             }
         });
+
+        loginRedirect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Jumping to signup activity
+                startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+            }
+        });
     }
 
     /* Checks if all user inputs and returns true if they are. */

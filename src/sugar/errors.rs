@@ -64,6 +64,14 @@ pub enum LoginError {
     INVALID_LOGIN_CREDENTIALS = 30,
     /// User was disabled by an administrator.
     USER_DISABLED = 31,
+    /// Token is expired and user must login once more to renew it.
+    TOKEN_EXPIRED = 32,
+    /// Token is not valid yet.
+    TOKEN_NOT_VALID = 33,
+    /// Either token's header is malformed or it is missing kid property.
+    MALFORMED_TOKEN_HEADER = 34,
+    /// Unable to parse keys from token validation request.
+    KEY_PARSING_ERROR = 35,
 }
 
 impl Display for InternalError {
@@ -107,6 +115,10 @@ impl Display for LoginError {
             Self::INVALID_PASS => write!(f, "Provided password is too weak."),
             Self::INVALID_LOGIN_CREDENTIALS => write!(f, "Either password or email is wrong. Retry is needed."),
             Self::USER_DISABLED => write!(f, "User is disabled by application administrator."),
+            Self::TOKEN_EXPIRED => write!(f, "Token is expired."),
+            Self::TOKEN_NOT_VALID => write!(f, "Token is not valid yet."),
+            Self::MALFORMED_TOKEN_HEADER => write!(f, "Malformed token header."),
+            Self::KEY_PARSING_ERROR => write!(f, "Unable to parse keys from token validation requerst."),
         }
     }
 }
@@ -157,6 +169,15 @@ impl Into<LoginError> for Error {
                 if s.contains("USER_DISABLED") {
                     return LoginError::USER_DISABLED
 
+                }
+                if s.contains("Invalid ID token") || s.contains("Token isn't valid yet!") {
+                    return LoginError::TOKEN_NOT_VALID
+                }
+                if s.contains("Token is expired") {
+                    return LoginError::TOKEN_EXPIRED
+                }
+                if s.contains("token header") {
+                    return LoginError::MALFORMED_TOKEN_HEADER
                 }
 
                 log::error!("Fatal error: {}", s);

@@ -28,6 +28,8 @@ public class LoginActivity extends AppCompatActivity {
     // Native JNI interface for Rust backend.
     /* Handles users logins with firebase. */
     private static native int login(final String mail, final String pass);
+    /* Will be used once on application startup. Logins with last token, obtained from firebase. */
+    private static native int loginFast();
 
     // Text input values.
     EditText editTextEmail, editTextPassword;
@@ -50,6 +52,12 @@ public class LoginActivity extends AppCompatActivity {
 
         // Initialization.
         SugarInit.rustInit(fileDir, cacheDir, extFileDir, extCacheDir); // Rust initialization.
+
+        // Trying to login via saved token credentials.
+        if (loginFast() == 0) {
+            // Jumping to login activity
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        }
     }
 
     @Override

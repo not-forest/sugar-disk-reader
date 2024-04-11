@@ -38,9 +38,9 @@ CFLAGS += -march=x86-64 -ffreestanding -fomit-frame-pointer -fno-exceptions -fno
 CFLAGS += -fno-asynchronous-unwind-tables -fno-unwind-tables -Wall -Werror
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -g -Og
+	CFLAGS += -g -Og -D__RELEASE__=0
 else
-	CFLAGS += -O3
+	CFLAGS += -O3 -D__RELEASE__=1
 endif
 
 .PHONY: clean
@@ -53,10 +53,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/asm/%.asm
 	@cd $(SRC_DIR)/asm && nasm -felf32 -g $< -o $@
 
 # Compile C files.
-$(OBJ_C): $(SOURCE_C)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c 
 	@echo "Compiling C files... "
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $^ -o $@ 
+	$(CC) $(CFLAGS) -c $< -o $@ 
 
 # Linking
 ${DAEMON_ELF}: $(OBJECTS)

@@ -13,7 +13,7 @@ ENTRY(_start)
 INCLUDE mem.ld
 
 /* Separated assembly imports. */
-INPUT(mbr.o gdt.o disk.o) 
+INPUT(mbr.o gdt.o disk.o idt.o insc.o) 
 
 SECTIONS
 {
@@ -23,7 +23,9 @@ SECTIONS
     {
         mbr.o*(.text)
         gdt.o*(.text)
-        disk.o(.text)
+        disk.o*(.text)
+
+        insc.o*(.text)
     } > mbrrom
 
     .signature : AT(0x7DFE)

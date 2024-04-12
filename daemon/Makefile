@@ -63,12 +63,12 @@ ${DAEMON_ELF}: $(OBJECTS)
 	@echo "Linking..."
 	@cd $(BUILD_DIR) && cp $(SOURCE_LD) . && $(LD) -m elf_i386 -T linker.ld $(OBJ_C) -o ${DAEMON_ELF}
 	@objcopy -O binary ${DAEMON_ELF} ${DAEMON_BIN}
-	@dd if=/dev/zero of=${IMG} bs=25K count=1
+	@dd if=/dev/zero of=${IMG} bs=512 count=24
 	@dd if=${DAEMON_BIN} of=${IMG}
 
 all: ${DAEMON_ELF}
 
-run: ${DAEMON_ELF}
+run: clean ${DAEMON_ELF}
 ifeq ($(DEBUG), 1)
 	@qemu-system-x86_64 -drive format=raw,file=$(IMG) -m 1M -s -S -no-reboot -no-shutdown & 	
 	@echo "Waiting for QEMU to start..."

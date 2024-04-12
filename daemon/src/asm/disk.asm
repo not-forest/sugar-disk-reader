@@ -9,14 +9,14 @@ section .text
 bits 16
 ; This function provides an interface to load data from the disk via BIOS.
 _load_disk:
-    pusha          ; Pushing all registers that was set
+    pusha       
     push dx
 
     mov ah, 0x02           ; Read mode
-    mov al, dh             ; Read two sectors
-    mov cl, 0x02           ; Start from the second one
+    mov al, dh             ; Read DH sectors
 
     mov ch, 0x00           ; Cylinder 0
+    mov cl, 0x02           ; Start from the second one
     mov dh, 0x00           ; Head 0
 
     int 13h        ; BIOS interrupt for disk op.

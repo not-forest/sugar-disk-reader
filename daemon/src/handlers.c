@@ -8,6 +8,10 @@
  * */
 
 #include "arch/cpu.h"
+#include "arch/pic.h"
+#include "vga.h"
+
+extern VGABuffer LOGGER;
 
 /* Halts the whole application completely. */
 void GENERAL_HANDLER(struct Iframe *frame) {
@@ -18,13 +22,23 @@ void GENERAL_HANDLER(struct Iframe *frame) {
 
 /* Handles most of IO events by checking the buffered data obtained from 
  * mobile's backend. */
-void SOFTWARE_TIMER_HANDLER(struct Iframe *frame) {
-    // IO logic....    
+void SOFTWARE_TIMER_HANDLER(struct Iframe *frame) { 
+#if !__RELEASE__
+    printc('A', COLOR_CYAN, &LOGGER);
+#endif
+
+    end_of_interrupt(PIC1);
+}
+
+void SOFTWARE_KEYBOARD_HANDLER(struct Iframe *frame) {
+    // IO logic...
+
+    end_of_interrupt(PIC1);
 }
 
 // Aliasing out undefined handlers to GENERAL_HANDLER.
 #define __aliased(name) \
-    __attribute__((interrupt, weak, alias("GENERAL_HANDLER"))) \
+    __attribute__((interrupt, alias("GENERAL_HANDLER"))) \
     void name(struct Iframe *frame);
 
 /* All defined handles are commented out */
@@ -52,5 +66,5 @@ __aliased(VMMC_EXCEPTION_HANDLER);
 __aliased(SECURITY_EXCEPTION_HANDLER);
 
 
-// __aliased(SOFTWARE_TIMER_HANDLER);
-__aliased(SOFTWARE_KEYBOARD_HANDLER);
+//__aliased(SOFTWARE_TIMER_HANDLER);
+//__aliased(SOFTWARE_KEYBOARD_HANDLER);

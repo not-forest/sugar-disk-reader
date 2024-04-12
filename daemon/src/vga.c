@@ -3,11 +3,10 @@
  * interface. More complicated graphics are not required due to debug only
  * purposes.
  * */
+
+#if !__RELEASE__
 #include<stdint.h>
 #include"vga.h"
-
-#ifndef DEBUG
-#define DEBUG
 
 /* Shifts the values in the buffer by rows 
 The function is not suitable for switching rows, but only shift to a

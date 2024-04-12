@@ -12,6 +12,11 @@
 
 #include<stdint.h>
 
+typedef union {
+    void *f;
+    uint16_t bits[2];
+} ISR_F;
+
 // A special type for gate descriptor, which is an entry in the IDT.
 typedef struct {
     uint16_t offset_0_15;
@@ -26,14 +31,14 @@ __attribute__((aligned(0x10)))
 static GateDescriptor IDT[256];
 
 /* Sets the certain vector of IDT to some value */
-void idt_set_descriptor(uint8_t vec, void *isr, uint8_t flags, uint16_t selector) {
+void idt_set_descriptor(uint8_t vec, ISR_F isr, uint8_t flags, uint16_t selector) {
     GateDescriptor *desc = &IDT[vec];
 
-    desc->offset_0_15 = (uint32_t)isr & 0xffff;
-    desc->offset_16_31 = (uint32_t)isr >> 16;
+    desc->offset_0_15 = isr.bits[0];
     desc->selector = selector;
-    desc->attr = flags;
     desc->reserved = 0;
+    desc->attr = flags;
+    desc->offset_16_31 = isr.bits[1];
 }
 
 /* Main function that initialize the whole IDT table */

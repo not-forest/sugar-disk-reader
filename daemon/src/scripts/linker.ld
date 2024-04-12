@@ -3,7 +3,7 @@
  *
  *  This script defines kernel sections of daemon binary. Daemon is a relatively small binary
  *  application, so it does not require too much kernel sections and modules, yet it has to
- *  enter to 32-bit protected mode and bootload the main C code.
+ *  enter to 32-bit protected mode and bootloads the main C code.
  * */
 
 /* Daemon entry point */
@@ -21,6 +21,7 @@ SECTIONS
 
     .text : AT(ORIGIN(mbrrom))
     {
+        /* Assembly */
         mbr.o*(.text)
         gdt.o*(.text)
         disk.o*(.text)
@@ -36,11 +37,13 @@ SECTIONS
 
     .text : AT(ORIGIN(approm))
     {
+        /* Main application space. Starting in the second disk sector. */
         KEEP(*(.vectors*))
         *(.text*)
         *(.rodata*)
         *(.got*)
     } > approm
+
 
     .bss (NOLOAD) :
     {
@@ -58,14 +61,13 @@ SECTIONS
         . =  ALIGN(8);
         . += _STACK_SIZE_;
         . =  ALIGN(8);
-        _STACK_TOP_ = .;
+        _STACK_TOP_ = .;                        /* Stack top address. */
     } > appram
 
     /DISCARD/ : 
     {
-        *(COMMON)
+        *(COMMON)                               /* Removing all repeated symbols. */
     }
 
-    _DAEMON_END_ = .;
+    _DAEMON_END_ = .;                           /* Symbol which defines the end of daemon. */
 }
-

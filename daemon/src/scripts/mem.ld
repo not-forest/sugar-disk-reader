@@ -8,9 +8,9 @@
 
 MEMORY
 {
-    mbrrom (rx)  : ORIGIN = 0x7C00, LENGTH = 512   /* MBR */
+    mbrrom (rx)  : ORIGIN = 0x7C00, LENGTH = 512    /* MBR */
     approm (rx)  : ORIGIN = 0x7E00, LENGTH = 5K    /* Main application's code */
-    appram (rwx) : ORIGIN = 0x9200, LENGTH = 1K    /* Main application's stack */
+    appram (rwx) : ORIGIN = 0x9200, LENGTH = 1K     /* Main application's stack */
 }
 
 _STACK_SIZE_ = 1K;

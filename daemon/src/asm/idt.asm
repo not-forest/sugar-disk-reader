@@ -34,6 +34,7 @@ extern SECURITY_EXCEPTION_HANDLER
 
 ; Interrupts
 extern SOFTWARE_TIMER_HANDLER
+extern SOFTWARE_KEYBOARD_HANDLER
 
 global IDT_TABLE  ; Global IDT table which will be loaded during the boot.
 
@@ -43,7 +44,7 @@ global IDT_TABLE  ; Global IDT table which will be loaded during the boot.
 ;   a general handler, that easily just halts the execution of the process.
 IDT_TABLE:
 %assign i 0
-%rep 32
+%rep 33
     dd _isr_%+i ; Writing all 256 entries of IDT table.  
 %assign i i + 1
 %endrep
@@ -89,3 +90,4 @@ _define_isr 30, SECURITY_EXCEPTION_HANDLER
 _define_isr 31, GENERAL_HANDLER
 
 _define_isr 32, SOFTWARE_TIMER_HANDLER
+_define_isr 33, SOFTWARE_KEYBOARD_HANDLER

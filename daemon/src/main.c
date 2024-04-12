@@ -15,8 +15,11 @@
 
 extern void *IDT_TABLE[];       // IDT TABLE defined in idt.asm 
 
+#define __PIC_MASTER_OFFSET__ 32
+
 #include <stdint.h>
 #include "arch/idt.h"
+#include "arch/pic.h"
 #include "vga.h"
 
 #define L_WARN COLOR_YELLOW
@@ -27,27 +30,28 @@ extern void *IDT_TABLE[];       // IDT TABLE defined in idt.asm
 #define FD "[FAILED]"
 
 // A global static buffer.
-static volatile VGABuffer LOGGER = {.row = 0, .col = 0};
+volatile VGABuffer LOGGER = {.row = 0, .col = 0};
 
 /* Main daemon entry point. */
 void main(uint16_t boot_drive) {
     disable_cursor(); 
 
-#if __RELEASE__ == 0
+#if !__RELEASE__
     prints("Initializing... ", L_INFO, &LOGGER); 
 #endif
 
     /* Beginning of daemon post initialization */
     
-    idt_init();
+    idt_init();                             // Intializing the IDT.
+    remap_pic(__PIC_MASTER_OFFSET__);       // Remapping PIC controller.
 
     /* End of initialization */
     
-#if __RELEASE__ == 0
+#if !__RELEASE__
     println(OK, L_OK, &LOGGER);
 #endif
 
-    for(;;);
+    for(;;) __asm__ ("sti; hlt");
 }
 
 /* Initializing the IDT and putting required handler functions within */
@@ -60,11 +64,11 @@ void idt_init() {
 
     // Providing exceptions,
     for (vec = 0; vec < 32; vec++) {
-        idt_set_descriptor(vec, IDT_TABLE[vec], TRAP_GATE, cs);
+        idt_set_descriptor(vec, (ISR_F)IDT_TABLE[vec], TRAP_GATE, cs);
     }
 
-    for (; vec < 255; vec++) {
-        idt_set_descriptor(vec, IDT_TABLE[vec], INT_GATE, cs);
+    for (; vec < 34; vec++) {
+        idt_set_descriptor(vec, (ISR_F)IDT_TABLE[vec], INT_GATE, cs);
     }
 
     // Creating a pointer for lidt instruction

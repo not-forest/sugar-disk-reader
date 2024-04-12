@@ -17,11 +17,24 @@ struct Iframe {
     uint16_t eip, cs, eflags;
 }; 
 
+// Writes a byte to the chosen port.
+__attribute__((no_caller_saved_registers)) 
+static inline void outb(uint16_t port, uint8_t val) {
+    __asm__ volatile ( "outb %b0, %w1" : : "a"(val), "Nd"(port) : "memory");
+}
+
+// Reads the data from the provided port.
+__attribute__((no_caller_saved_registers)) 
+static inline uint8_t inb(uint16_t port) {
+    uint8_t val;
+    __asm__ volatile ( "inb %w1, %b0" : "=a"(val) : "Nd"(port) : "memory");
+    return val;
+}
+
 //////// CPU DEFINED INTERRUPTS AND EXCEPTIONS /////////
 
 #define general_handler(name) \
-    __attribute__((interrupt, weak)) \
-    void name(struct Iframe *frame);
+    void name(struct Iframe *frame) __attribute__((interrupt, weak));
 
 /* * * * * * * * * * * * * * * * * * * *
  *  EXCEPTION HANDLERS (vecn: 0 - 31)

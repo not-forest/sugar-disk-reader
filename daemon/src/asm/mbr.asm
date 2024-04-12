@@ -38,7 +38,7 @@ _load_daemon:
     ; Preparing data for BIOS. The BIOS needs to know where to start reading,
     ; how much to read, and where to store the data in memory.
     mov bx, _APPROM_ADDR_  ; Tail address
-    mov dh, 0x02           ; Amount of sectors
+    mov dh, _SECTORS_LEN_           ; Amount of sectors to read.
     mov dl, [_BOOT_DRIVE_] ; Making sure the dl has the disk info from BIOS.
 
     call _load_disk         ; With register set, calling the disk operation.
@@ -71,6 +71,8 @@ _init_protected:
     jmp $
 
 _BOOT_DRIVE_ db 0
+
+_SECTORS_LEN_ equ 3
 
 ; Extern variables
 extern _MBRROM_ADDR_ 

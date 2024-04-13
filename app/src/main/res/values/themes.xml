@@ -13,9 +13,20 @@
         <item name="android:navigationBarColor">@color/main</item>
 
         <!-- Customize your dark theme here -->
+        <item name="android:colorPrimaryDark">@color/main</item>
+
         <item name="colorSurface">@color/white</item> <!-- Surface color -->
         <item name="colorOnSurface">@color/black</item> <!-- Text color on surface -->
     </style>
 
     <style name="Theme.Sugar" parent="Base.Theme.Sugar" />
+
+    <style name="Theme.Sugar.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Sugar.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.Sugar.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -29,11 +29,11 @@ public class LoginActivity extends AppCompatActivity {
     /* Handles users logins with firebase. */
     private static native int login(final String mail, final String pass);
     /* Will be used once on application startup. Logins with last token, obtained from firebase. */
-    private static native int loginFast();
+    private static native String loginFast();
 
     // Text input values.
     EditText editTextEmail, editTextPassword;
-    TextView forgotRedirect, signUpRedirect, mailErrorText, passwordErrorText;
+    TextView forgotRedirect, guestLogin, signUpRedirect, mailErrorText, passwordErrorText;
     Button buttonLogin;
 
     /* Application's entry point.
@@ -54,9 +54,12 @@ public class LoginActivity extends AppCompatActivity {
         SugarInit.rustInit(fileDir, cacheDir, extFileDir, extCacheDir); // Rust initialization.
 
         // Trying to login via saved token credentials.
-        if (loginFast() == 0) {
+        String mail = loginFast();
+        if (!mail.isEmpty()) {
             // Jumping to login activity
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            Intent i = new Intent(LoginActivity.this, MainActivity.class);
+            i.putExtra("mail", mail);
+            startActivity(i);
         }
     }
 
@@ -71,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         editTextPassword =          findViewById(R.id.editTextPassword);
 
         forgotRedirect =             findViewById(R.id.forgotRedirect);
+        guestLogin =                findViewById(R.id.guestLogin);
         signUpRedirect =            findViewById(R.id.signUpRedirect);
         mailErrorText =             findViewById(R.id.mailErrorText);
         passwordErrorText =             findViewById(R.id.passwordErrorText);
@@ -98,8 +102,10 @@ public class LoginActivity extends AppCompatActivity {
                                     Toast.LENGTH_SHORT
                             ).show();
 
-                            // Jumping to login activity
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                            // Jumping to main activity
+                            Intent i = new Intent(LoginActivity.this, MainActivity.class);
+                            i.putExtra("mail", mail);
+                            startActivity(i);
                             break;
                         case 10:
                             mailErrorText.setText(R.string.error_mail_regex);
@@ -133,6 +139,23 @@ public class LoginActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Jumping to signup activity
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
+            }
+        });
+
+        guestLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Note about signup success.
+                Toast.makeText(
+                        LoginActivity.this,
+                        "Login for better reading. Happy reading :)))",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                // Jumping to login activity
+                Intent i = new Intent(LoginActivity.this, MainActivity.class);
+                i.putExtra("mail", "");
+                startActivity(i);
             }
         });
     }

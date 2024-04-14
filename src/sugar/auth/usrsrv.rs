@@ -112,6 +112,11 @@ pub mod service {
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
         'main: loop {
+           /*  let a = auth.sign_in_email(&mail, &pass, true).await;
+
+            log::debug!("{:?}", a);
+            loop {} */
+
             // Parsing an output from firebase server.
             return match auth.sign_in_email(&mail, &pass, true).await {
                 Ok(res) => {
@@ -141,7 +146,7 @@ pub mod service {
                     log::error!("Login error: {}", &converted);
                     log::error!("Details: {}", &err);
 
-                    UserServiceStatus::SignupError(converted)
+                    UserServiceStatus::LoginError(converted)
                 },
             }
         }

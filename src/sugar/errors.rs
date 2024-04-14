@@ -164,6 +164,11 @@ impl Into<LoginError> for Error {
                     return LoginError::USER_DISABLED
 
                 }
+            
+                log::error!("Fatal error: {}", s);
+                panic!();   
+            },
+            Self::Token(s) => {
                 if s.contains("Invalid ID token") || s.contains("Token isn't valid yet!") {
                     return LoginError::TOKEN_NOT_VALID
                 }
@@ -175,9 +180,9 @@ impl Into<LoginError> for Error {
                 }
 
                 log::error!("Fatal error: {}", s);
-                panic!();   
-            },
-            _ => loop {},
+                panic!();  
+            }
+            _ => unreachable!(),
         }
     }
 }

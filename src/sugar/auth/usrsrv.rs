@@ -22,6 +22,7 @@ pub enum UserServiceStatus {
 /// Module which contains all service functions related to user authentications.
 pub mod service {
     use firebase_auth_sdk::FireAuth;
+    use firebase_auth_sdk::api::{SignInResponse, SignUpResponse};
 
     use super::UserServiceStatus;
     use crate::sugar::{
@@ -35,7 +36,6 @@ pub mod service {
     #[tokio::main]
     pub async fn fast_login() -> UserServiceStatus {
         log::debug!("Encountered fast login request.");
-        use firebase_auth_sdk::api::SignInResponse;
         use firebase_auth_sdk::Error;
 
         match LocalStorage::read::<SignInResponse>("login_response") {
@@ -112,11 +112,6 @@ pub mod service {
         let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
         'main: loop {
-           /*  let a = auth.sign_in_email(&mail, &pass, true).await;
-
-            log::debug!("{:?}", a);
-            loop {} */
-
             // Parsing an output from firebase server.
             return match auth.sign_in_email(&mail, &pass, true).await {
                 Ok(res) => {
@@ -124,7 +119,7 @@ pub mod service {
 
                     // Writing newest response to the local storage for use later.
                     'inner: loop {
-                        if let Err(err) = LocalStorage::write(&res, "login_response") {
+                        if let Err(err) = LocalStorage::write::<SignInResponse>(&res, "login_response") {
                             match err {
                                 // It is better to retry if our write was interrupted at that point.
                                 StorageError::INTERRUPTED => continue 'inner,
@@ -172,7 +167,7 @@ pub mod service {
 
                     // Writing newest response to the local storage for use later.
                     'inner: loop {
-                        if let Err(err) = LocalStorage::write(&res, "signup_response") {
+                        if let Err(err) = LocalStorage::write::<SignUpResponse>(&res, "signup_response") {
                             match err {
                                 // It is better to retry if our write was interrupted at that point.
                                 StorageError::INTERRUPTED => continue 'inner,

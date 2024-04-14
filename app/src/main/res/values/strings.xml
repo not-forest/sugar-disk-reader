@@ -5,6 +5,7 @@
     <string name="hint_password">Password</string>
     <string name="hint_confirm_password">Confirm Password</string>
     <string name="forgot_password">Forgot Password?</string>
+    <string name="guest_login">Guest Login</string>
     <string name="register">Sign Up</string>
     <string name="login">Login</string>
     <string name="login_failed">"Login Failed"</string>
@@ -34,4 +35,5 @@
     <string name="menu_home">Home</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_profile">Profile</string>
+    <string name="greetings_user">Thank you for choosing \'Sugar\'.</string>
 </resources>

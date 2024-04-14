@@ -106,8 +106,8 @@ public class LoginActivity extends AppCompatActivity {
                             mailErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 30:
-                            mailErrorText.setText(R.string.error_invalid_credentials);
-                            mailErrorText.setVisibility(View.VISIBLE);
+                            passwordErrorText.setText(R.string.error_invalid_credentials);
+                            passwordErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 31:
                             Toast.makeText(

@@ -19,6 +19,7 @@ pub mod sugar {
     pub mod auth {
         /// User service.
         pub mod usrsrv;
+        pub mod profile;
 
         pub use usrsrv::service;
     }
@@ -47,6 +48,7 @@ pub mod android {
     
     use jni::JNIEnv;
     use jni::objects::{JClass, JString};
+    use jni::sys::jstring;
 
     use log::LevelFilter;
     use android_logger::{Config, FilterBuilder};
@@ -123,10 +125,15 @@ pub mod android {
     ///
     /// Will be called by Java's front-end, when user creates new 'Sugar' account.
     #[no_mangle]
-    pub extern fn Java_com_notforest_sugar_LoginActivity_loginFast() -> u8 {
+    pub extern fn Java_com_notforest_sugar_LoginActivity_loginFast(
+        mut env: JNIEnv,
+        _: JClass
+    ) -> jstring {
         log::info!("Begin: login");
 
-        fast_login().into()
+        let st = if let Some(s) = fast_login() { s } else { "".to_string() };
+        env.new_string(st).expect("Unable to create new Java string from environment.")
+            .into_raw()
     }
 
     /// Wrapper function to provide java's strings to rust login interface.

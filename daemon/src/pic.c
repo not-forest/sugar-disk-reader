@@ -41,5 +41,5 @@ void remap_pic(uint8_t master_offset) {
  * */
 __attribute__((no_caller_saved_registers)) 
 void end_of_interrupt(uint16_t port) {
-    outb(PIC1_COMMAND, port); // OCW2: telling the chosen PIC.
+    outb(port, PIC_EOI); // OCW2: telling the chosen PIC.
 }

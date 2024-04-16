@@ -128,8 +128,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static Bitmap getProfilePicture(String email) throws IOException {
-        // Construct the URL for the profile image
-        String imageUrl = "https://lh3.googleusercontent.com/a/ACg8ocJiNEfzbvCMIcJRsuK9MXQqdvobCXVB3I5p9xPWeJbuqfrJ0JA=s288-c-no";
+        String hash = getEmailHash(email);
+        if (hash == null) {
+            return null; // Handle case where hashing fails
+        }
+
+        // Construct the URL for the profile image using the hashed value
+        String imageUrl = "https://lh3.googleusercontent.com/a/" + hash + "=s288-c-no";
 
         // Open a connection to the URL
         URL url = new URL(imageUrl);

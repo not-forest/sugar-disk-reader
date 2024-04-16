@@ -55,7 +55,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Trying to login via saved token credentials.
         String mail = loginFast();
-        if (!mail.isEmpty()) {
+        if (mail != null && !mail.isEmpty()) {
             // Jumping to login activity
             Intent i = new Intent(LoginActivity.this, MainActivity.class);
             i.putExtra("mail", mail);

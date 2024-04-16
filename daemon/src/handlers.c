@@ -27,13 +27,13 @@ void SOFTWARE_TIMER_HANDLER(struct Iframe *frame) {
     printc('A', COLOR_CYAN, &LOGGER);
 #endif
 
-    end_of_interrupt(PIC1);
+    end_of_interrupt(PIC1_COMMAND);
 }
 
 void SOFTWARE_KEYBOARD_HANDLER(struct Iframe *frame) {
     // IO logic...
 
-    end_of_interrupt(PIC1);
+    end_of_interrupt(PIC1_COMMAND);
 }
 
 // Aliasing out undefined handlers to GENERAL_HANDLER.

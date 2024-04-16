@@ -34,70 +34,16 @@ pub mod service {
     /// This will omit the need of writing login credentials each time. Only works for logged in
     /// users. If the token is expired, user must login once more.
     #[tokio::main]
-    pub async fn fast_login() -> UserServiceStatus {
+    pub async fn fast_login() -> Option<String> {
         log::debug!("Encountered fast login request.");
-        use firebase_auth_sdk::Error;
 
-        match LocalStorage::read::<SignInResponse>("login_response") {
-            Ok(mut res) => {
-                let mut token = res.id_token;
-                let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
-               
-                'token: loop {
-                    // Verifying the current ID token.
-                    return match auth.verify_id_token(token.as_str()).await {
-                        Ok(claim) => {
-                            log::info!("Token login success: {:#?}", claim);
-
-                            UserServiceStatus::NoError
-                        },
-                        Err(err) => match err.clone() {
-                            Error::API(s) => {
-                                log::error!("Firebase API error: {}", s);
-                                UserServiceStatus::LoginError(
-                                    LoginError::KEY_PARSING_ERROR
-                                )
-                            }, 
-                            Error::Token(s) => {
-                                log::error!("Token error: {}", s);
-
-                                let token_err = err.into();
-
-                                // Trying to refresh the expired token right away.
-                                match token_err {
-                                    // If expired, refreshing.
-                                    LoginError::TOKEN_EXPIRED => {
-                                        if let Some(refresh_token) = res.refresh_token {
-                                            match auth.refresh_id_token(refresh_token.as_str()).await {
-                                                Ok(claim) => {
-                                                    log::info!("Token refreshed, retrying to verify. Claim: {:#?}", claim);
-                                                    token = claim.id_token;
-                                                    res.id_token = token.clone();
-                                                    res.refresh_token = Some(claim.refresh_token);
-
-                                                    // Writing new token data to the
-                                                    LocalStorage::write(&res, "login_response").ok();
-                                                },
-                                                Err(err) => {
-                                                    log::error!("Unable to refresh the token. Login is required: {:#?}", err);
-                                                    return UserServiceStatus::LoginError(token_err)
-                                                },
-                                            };
-                                        }
-
-                                        // Retrying with new token.
-                                        continue 'token
-                                    },
-                                    _ => UserServiceStatus::LoginError(token_err),
-                                }
-                            },
-                            _ => unreachable!(),
-                        },
-                    }
-                }
+        match crate::sugar::auth::profile::get_user().await {
+            Ok(s) => {
+                log::info!("Login: OK");
+                Some(s)
             },
-            Err(err) => UserServiceStatus::StorageError(err),
-        }
+            Err(_) => None,
+        } 
     }
 
     /// Performs full application login procedure.

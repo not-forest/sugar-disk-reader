@@ -40,10 +40,11 @@ SECTIONS
         /* Main application space. Starting in the second disk sector. */
         KEEP(*(.vectors*))
         *(.text*)
+        /* Amount of sectors to copy from the disk. */
+        _SECTORS_AMOUNT_ = (. + 511) / 512 - _APPROM_ADDR_;
         *(.rodata*)
         *(.got*)
     } > approm
-
 
     .bss (NOLOAD) :
     {

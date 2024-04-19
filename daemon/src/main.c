@@ -22,13 +22,6 @@ extern void *IDT_TABLE[];       // IDT TABLE defined in idt.asm
 #include "arch/pic.h"
 #include "vga.h"
 
-#define L_WARN COLOR_YELLOW
-#define L_OK   COLOR_GREEN
-#define L_INFO COLOR_WHITE
-
-#define OK "[OK]"
-#define FD "[FAILED]"
-
 // A global static buffer.
 volatile VGABuffer LOGGER = {.row = 0, .col = 0};
 
@@ -67,7 +60,7 @@ void idt_init() {
         idt_set_descriptor(vec, (ISR_F)IDT_TABLE[vec], TRAP_GATE, cs);
     }
 
-    for (; vec < 34; vec++) {
+    for (; vec < 255; vec++) {
         idt_set_descriptor(vec, (ISR_F)IDT_TABLE[vec], INT_GATE, cs);
     }
 
@@ -75,7 +68,7 @@ void idt_init() {
     struct {
         uint16_t length;
         void*    base;
-    } __attribute__((packed)) IDTR = { .length = sizeof(IDT) - 1, &IDT };
+    } __attribute__((packed)) IDTR = { .length = sizeof(IDT) - 1, .base =  &IDT };
  
     __asm__ ( "lidt %0" : : "m"(IDTR) );
 }

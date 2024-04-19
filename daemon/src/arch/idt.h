@@ -13,8 +13,8 @@
 #include<stdint.h>
 
 typedef union {
-    void *f;
-    uint16_t bits[2];
+    void *handler;
+    uint32_t bits[2];
 } ISR_F;
 
 // A special type for gate descriptor, which is an entry in the IDT.

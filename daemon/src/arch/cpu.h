@@ -34,7 +34,7 @@ static inline uint8_t inb(uint16_t port) {
 //////// CPU DEFINED INTERRUPTS AND EXCEPTIONS /////////
 
 #define general_handler(name) \
-    void name(struct Iframe *frame) __attribute__((interrupt, weak));
+    void name(struct Iframe *frame) __attribute__((weak));
 
 /* * * * * * * * * * * * * * * * * * * *
  *  EXCEPTION HANDLERS (vecn: 0 - 31)

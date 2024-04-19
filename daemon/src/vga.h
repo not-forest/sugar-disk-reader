@@ -29,6 +29,14 @@
 #define COLOR_YELLOW 0xe
 #define COLOR_WHITE 0xf
 
+#define L_WARN COLOR_YELLOW
+#define L_OK   COLOR_GREEN
+#define L_INFO COLOR_WHITE
+#define L_ERROR COLOR_RED 
+
+#define OK "[OK]"
+#define FD "[FAILED]"
+
 // A struct that tracks the cursor to print out messages correctly.
 typedef struct {
     uint_fast8_t row, col;

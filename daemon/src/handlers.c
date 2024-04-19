@@ -16,7 +16,7 @@ extern VGABuffer LOGGER;
 /* Halts the whole application completely. */
 void GENERAL_HANDLER(struct Iframe *frame) {
 #if !__RELEASE__
-    println("Error general handler invoked!", COLOR_RED, &LOGGER);
+    println("Error general handler invoked!", L_ERROR, &LOGGER);
 #endif
     // Debugging logic... 
 
@@ -37,7 +37,7 @@ void BREAKPOINT_HANDLER(struct Iframe *frame) {
  * mobile's backend. */
 void SOFTWARE_TIMER_HANDLER(struct Iframe *frame) { 
 #if !__RELEASE__
-    printc('A', COLOR_CYAN, &LOGGER);
+    printc('A', L_INFO, &LOGGER);
 #endif
 
     end_of_interrupt(PIC1_COMMAND);
@@ -51,7 +51,7 @@ void SOFTWARE_KEYBOARD_HANDLER(struct Iframe *frame) {
 
 // Aliasing out undefined handlers to GENERAL_HANDLER.
 #define __aliased(name) \
-    void name(struct Iframe *frame) __attribute__((interrupt, alias("GENERAL_HANDLER")));
+    void name(struct Iframe *frame) __attribute__((alias("GENERAL_HANDLER")));
 
 /* All defined handles are commented out */
 

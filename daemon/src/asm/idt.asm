@@ -36,6 +36,8 @@ extern SECURITY_EXCEPTION_HANDLER
 extern SOFTWARE_TIMER_HANDLER
 extern SOFTWARE_KEYBOARD_HANDLER
 
+.text
+bits 32
 global IDT_TABLE  ; Global IDT table which will be loaded during the boot.
 
 ;   Defines all IDT entries with the required handler function.
@@ -53,6 +55,7 @@ IDT_TABLE:
 %macro _define_isr 2
 _isr_%+%1:
     call %2 ; Calling the handler function.
+    iret
 %endmacro
 
 ; Setting handler functions manually for each exception and interrupt

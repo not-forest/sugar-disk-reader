@@ -26,7 +26,7 @@ pub mod service {
 
     use super::UserServiceStatus;
     use crate::sugar::{
-        api::FIREBASE_API_KEY, errors::{StorageError, LoginError}, storage::LocalStorage
+        api::FIREBASE_API_KEY, errors::StorageError, storage::LocalStorage
     };
 
     /// Performs fast login via firebase token.
@@ -138,6 +138,21 @@ pub mod service {
                     UserServiceStatus::SignupError(converted)
                 },
             }
+        }
+    }
+
+    /// Logs out from the current session, while also deleting the last session's trace.
+    #[tokio::main]
+    pub async fn logout() -> UserServiceStatus {
+        log::debug!("Encountered logout request."); 
+
+        // Just deleting the last sign in responce will prevent auto login.
+        match LocalStorage::remove("login_response") {
+            Ok(_) => {
+                log::info!("Successfully logged out.");
+                UserServiceStatus::NoError
+            },
+            Err(err) => UserServiceStatus::StorageError(err),
         }
     }
 }

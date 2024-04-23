@@ -36,4 +36,11 @@
     <string name="nav_settings">Settings</string>
     <string name="nav_profile">Profile</string>
     <string name="greetings_user">Thank you for choosing \'Sugar\'.</string>
+    <string name="change_email">Change Email</string>
+    <string name="change_password">Change Password</string>
+    <string name="manage_profile">Manage</string>
+    <string name="logout">Logout</string>
+    <string name="new_email">New email</string>
+    <string name="old_password">Old password</string>
+    <string name="new_password">New password</string>
 </resources>

@@ -12,6 +12,7 @@
     <color name="main_complementary">#00FFFF</color> <!-- Cyan -->
     <color name="main_variant_complementary">#0080FF</color> <!-- Blue -->
     <color name="light_complementary">#339966</color> <!-- Green -->
+    <color name="main_transparent">#7FFFC107</color>
 
     <!-- Analogous Colors -->
     <color name="main_analogous_1">#FF8000</color> <!-- Orange -->

@@ -104,4 +104,24 @@ impl LocalStorage {
 
         out
     }
+
+    /// Removes some file from the local storage.
+    ///
+    /// Returns a storage error if unable to delete a file.
+    pub fn remove(dest: &'static str) -> Result<(), StorageError> {
+        let dest = Path::new(
+            FILES_DIR.read().unwrap().as_ref()
+        ).join(dest.to_owned()).with_extension("json");
+
+        if let Err(err) = std::fs::remove_file(dest) {
+            return match err.kind() {
+                ErrorKind::Interrupted => Err(StorageError::INTERRUPTED),
+                ErrorKind::NotFound => Err(StorageError::FILE_NOT_EXIST),
+                ErrorKind::TimedOut => Err(StorageError::TIME_OUT),
+                _ => unreachable!(),
+            }
+        }
+
+        Ok(())
+    }
 }

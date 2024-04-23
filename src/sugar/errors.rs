@@ -72,6 +72,8 @@ pub enum LoginError {
     MALFORMED_TOKEN_HEADER = 34,
     /// Unable to parse keys from token validation request.
     KEY_PARSING_ERROR = 35,
+    /// Unable to decode the verification key. 
+    NO_MATCH_DECODING_KEY = 36,
 }
 
 impl Display for InternalError {
@@ -119,6 +121,7 @@ impl Display for LoginError {
             Self::TOKEN_NOT_VALID => write!(f, "Token is not valid yet."),
             Self::MALFORMED_TOKEN_HEADER => write!(f, "Malformed token header."),
             Self::KEY_PARSING_ERROR => write!(f, "Unable to parse keys from token validation requerst."),
+            Self::NO_MATCH_DECODING_KEY => write!(f, "Unable to decode the verification key."),
         }
     }
 }
@@ -177,6 +180,9 @@ impl Into<LoginError> for Error {
                 }
                 if s.contains("token header") {
                     return LoginError::MALFORMED_TOKEN_HEADER
+                }
+                if s.contains("No match decoding key!") {
+                    return LoginError::NO_MATCH_DECODING_KEY
                 }
 
                 log::error!("Fatal error: {}", s);

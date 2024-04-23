@@ -10,29 +10,39 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.notforest.sugar.MainActivity;
+import com.notforest.sugar.databinding.FragmentHomeBinding;
 import com.notforest.sugar.databinding.FragmentSettingsBinding;
+import com.notforest.sugar.ui.home.HomeViewModel;
 
 
 public class SettingsFragment extends Fragment {
 
     private FragmentSettingsBinding binding;
+    private View root;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        SettingsViewModel galleryViewModel =
-                new ViewModelProvider(this).get(SettingsViewModel.class);
+        HomeViewModel homeViewModel =
+                new ViewModelProvider(this).get(HomeViewModel.class);
 
         binding = FragmentSettingsBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+        root = binding.getRoot();
 
-        final TextView textView = binding.textGallery;
-        galleryViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        // Access the activity associated with the fragment
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null) {
+            int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
+            root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
+        }
+
         return root;
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        root.setBackgroundResource(0);
         binding = null;
     }
 }

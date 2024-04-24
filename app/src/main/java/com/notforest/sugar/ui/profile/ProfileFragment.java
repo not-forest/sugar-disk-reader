@@ -20,11 +20,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.notforest.sugar.LoginActivity;
 import com.notforest.sugar.R;
 import com.notforest.sugar.MainActivity;
 import com.notforest.sugar.databinding.FragmentHomeBinding;
@@ -33,6 +35,16 @@ import com.notforest.sugar.ui.home.HomeViewModel;
 
 
 public class ProfileFragment extends Fragment {
+    static {
+        System.loadLibrary("sugar_jni");
+    }
+
+    /* Method for changing user email.  */
+    private static native int changeEmail(final String email);
+    /* Method for changing user password. */
+    private static native int changePassword(final String pass_old, final String pass_new);
+    /* Logging out from user's profile. */
+    private static native int logout();
 
     private LinearLayout changeEmailLayout, changePasswordLayout, logoutLayout;
     private Button changeEmailButton, changePasswordButton, logoutButton;
@@ -106,6 +118,52 @@ public class ProfileFragment extends Fragment {
                     changeEmailLayout.setVisibility(View.GONE);
                     changePasswordLayout.setVisibility(View.GONE);
                     logoutButton.setVisibility(View.GONE);
+                }
+            });
+
+            changeEmailButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    TextView new_mail = root.findViewById(R.id.new_email_input);
+
+                    changeEmail(new_mail.getText().toString());
+                }
+            });
+
+            changePasswordButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    TextView old_pass = root.findViewById(R.id.old_password_input);
+                    TextView new_pass = root.findViewById(R.id.new_password_input);
+
+                    changePassword(
+                            old_pass.getText().toString(),
+                            new_pass.getText().toString()
+                    );
+                }
+            });
+
+            logoutButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    switch (logout()) {
+                        case 0:
+                            // We are now logged out, so jumping to login screen.
+                        case 40:
+                            // No file means the user is not logged in for some reason.
+                            mainActivity.finish();
+                            break;
+                        case 46:
+                            // IO interrupted, trying one more time.
+                            logout();
+                            break;
+                        default:
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Unexpected error has occur. Please try again.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                    }
                 }
             });
 

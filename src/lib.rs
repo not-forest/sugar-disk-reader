@@ -52,7 +52,8 @@ pub mod android {
 
     use log::LevelFilter;
     use android_logger::{Config, FilterBuilder};
-    use sugar::auth::service::{fast_login, login, signup};
+    use sugar::auth::profile::{change_mail, change_pass};
+    use sugar::auth::service::{fast_login, login, logout, signup};
     use sugar::auth::usrsrv::UserServiceStatus;
     use sugar::storage::{FILES_DIR, CACHE_DIR, EXT_FILES_DIR, EXT_CACHE_DIR};
 
@@ -152,5 +153,42 @@ pub mod android {
         let pass = env.get_string(&java_pass).expect("Could not parse Java string.").into();
         
         login(mail, pass).into()
+    }
+
+    /// Wrapper function for logging out.
+    ///
+    /// Will be called by Java's front-end, when user creates new 'Sugar' account.
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_profile_ProfileFragment_logout() -> u8 {
+        log::info!("Begin: logout");
+        logout().into()
+    }
+
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_profile_ProfileFragment_changeEmail(
+        mut env: JNIEnv,
+        _: JClass,
+        java_mail: JString,
+    ) -> u8 { 
+        log::info!("Begin: change email address");
+        // Converting
+        let mail = env.get_string(&java_mail).expect("Could not parse Java string.").into();
+
+        change_mail(mail).into()
+    }
+
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_profile_ProfileFragment_changePassword(
+        mut env: JNIEnv,
+        _: JClass,
+        pass_old: JString,
+        pass_new: JString,
+    ) -> u8 {
+        log::info!("Begin: change password");
+        // Converting
+        //let old = env.get_string(&pass_old).expect("Could not parse Java string.").into();
+        let new = env.get_string(&pass_new).expect("Could not parse Java string.").into();
+
+        change_pass(new).into()
     }
 }

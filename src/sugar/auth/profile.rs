@@ -4,7 +4,7 @@
 //! based on the current session as well as changing user's data via firebase.
 
 use firebase_auth_sdk::{FireAuth, Error};
-use firebase_auth_sdk::api::{SignInResponse, UpdateUser};
+use firebase_auth_sdk::api::{SignInResponse, UpdateUser, User};
 use crate::sugar::{api::FIREBASE_API_KEY, errors::LoginError, storage::LocalStorage};
 use super::usrsrv::UserServiceStatus;
 
@@ -89,7 +89,43 @@ pub async fn get_user_id() -> Result<usize, UserServiceStatus> {
     }
 }
 
+/// Gets current logged in user as User structure.
+pub async fn get_self() -> Result<User, UserServiceStatus> {
+    let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
+
+    match LocalStorage::read::<SignInResponse>("login_response") {
+        Ok(res) => {
+            match auth.get_user_info(&res.id_token).await {
+                Ok(user) => Ok(user),
+                Err(err) => {
+                    log::error!("Obtained error while trying to obtain user info: {}", err);
+
+                    Err(UserServiceStatus::LoginError(err.into()))
+                }
+            }
+        },
+        Err(err) => Err(UserServiceStatus::StorageError(err)),    
+    }
+}
+
+/// Gets current user password based on the session.
+///
+/// The returned password will be a hashed version.
+pub async fn get_current_pass() -> Result<String, UserServiceStatus> {
+    match get_self().await {
+        Ok(user) => Ok(user.password_hash),
+        Err(err) => Err(err),
+    }
+}
+
+/// Compared the given password with a hashed value obtained from
+/// the current session.
+pub async fn compare_pass(pass: String) -> bool {
+    unimplemented!()
+}
+
 /// Makes a request to firebase for mail changing.
+#[tokio::main]
 pub async fn change_mail(mail: String) -> UserServiceStatus {
     let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
@@ -121,6 +157,7 @@ pub async fn change_mail(mail: String) -> UserServiceStatus {
 ///
 /// Input data is required, because the application does not physically owns user's
 /// password and only establishes communication between firebase and the mobile.
+#[tokio::main]
 pub async fn change_pass(new_pass: String) -> UserServiceStatus {
     let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 

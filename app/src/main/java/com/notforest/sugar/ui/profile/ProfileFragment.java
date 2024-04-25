@@ -61,9 +61,14 @@ public class ProfileFragment extends Fragment {
 
         binding = FragmentProfileBinding.inflate(inflater, container, false);
         root = binding.getRoot();
+        userMail = root.findViewById(R.id.profile_user_mail);
+        userPFP = root.findViewById(R.id.profile_user_pfp);
+
 
         // Access the activity associated with the fragment
         MainActivity mainActivity = (MainActivity) getActivity();
+        // Get intent and update UI elements
+        Intent i = mainActivity.getIntent();
         if (mainActivity != null) {
             int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
             root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
@@ -125,8 +130,45 @@ public class ProfileFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     TextView new_mail = root.findViewById(R.id.new_email_input);
+                    TextView new_mail_err = root.findViewById(R.id.new_email_error);
 
-                    changeEmail(new_mail.getText().toString());
+                    switch (changeEmail(new_mail.getText().toString())) {
+                        case 0:
+                            userMail.setText(new_mail.getText());
+                            mainActivity.change_user_data(new_mail.getText().toString());
+
+                            break;
+                        case 10:
+                            new_mail_err.setText(R.string.error_mail_regex);
+                            new_mail_err.setVisibility(View.VISIBLE);
+                            break;
+                        case 31:
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Your 'Sugar' account was disabled due to strange activity from this device. Please contact administration for further support.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                            break;
+                        case 20:
+                            new_mail_err.setText(R.string.error_mail_used_new);
+                            new_mail_err.setVisibility(View.VISIBLE);
+                            break;
+                        case 40:
+                            // No file means the user is not logged in for some reason.
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Please login again.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                            mainActivity.finish();
+                            break;
+                        default:
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Unexpected error has occur. Please try again.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                    }
                 }
             });
 
@@ -135,11 +177,40 @@ public class ProfileFragment extends Fragment {
                 public void onClick(View v) {
                     TextView old_pass = root.findViewById(R.id.old_password_input);
                     TextView new_pass = root.findViewById(R.id.new_password_input);
+                    TextView pass_err = root.findViewById(R.id.new_pass_error);
 
-                    changePassword(
+                    switch (changePassword(
                             old_pass.getText().toString(),
                             new_pass.getText().toString()
-                    );
+                    )) {
+                        case 0: break;
+                        case 11:
+                            pass_err.setText(R.string.error_pass_weak);
+                            pass_err.setVisibility(View.VISIBLE);
+                            break;
+                        case 31:
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Your 'Sugar' account was disabled due to strange activity from this device. Please contact administration for further support.",
+                                    Toast.LENGTH_LONG
+                            ).show();
+                            break;
+                        case 40:
+                            // No file means the user is not logged in for some reason.
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Please login again.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                            mainActivity.finish();
+                            break;
+                        default:
+                            Toast.makeText(
+                                    mainActivity,
+                                    "Unexpected error has occur. Please try again.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                    }
                 }
             });
 
@@ -167,11 +238,6 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
-            userMail = root.findViewById(R.id.profile_user_mail);
-            userPFP = root.findViewById(R.id.profile_user_pfp);
-
-            // Get intent and update UI elements
-            Intent i = mainActivity.getIntent();
             String m = i.getStringExtra("mail");
             if (m != null && !m.isEmpty()) {
                 userMail.setText(m);

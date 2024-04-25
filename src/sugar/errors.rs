@@ -74,6 +74,8 @@ pub enum LoginError {
     KEY_PARSING_ERROR = 35,
     /// Unable to decode the verification key. 
     NO_MATCH_DECODING_KEY = 36,
+    /// Provided email is not found.
+    EMAIL_NOT_FOUND = 37,
 }
 
 impl Display for InternalError {
@@ -157,6 +159,9 @@ impl Into<LoginError> for Error {
     fn into(self) -> LoginError {
         match self {
             Self::SignIn(s) => {
+                if s.contains("EMAIL_NOT_FOUND") {
+                    return LoginError::EMAIL_NOT_FOUND
+                }
                 if s.contains("INVALID_EMAIL") {
                     return LoginError::INVALID_EMAIL
                 }

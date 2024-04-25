@@ -75,15 +75,10 @@ public class MainActivity extends AppCompatActivity {
         userPFP = headerView.findViewById(R.id.user_pfp);
         customText = headerView.findViewById(R.id.custom_text);
 
-        // Get intent and update UI elements
+        // Call the method to change user data
         Intent i = getIntent();
         String m = i.getStringExtra("mail");
-        if (m != null && !m.isEmpty()) {
-            userMail.setText(m);
-            customText.setText(R.string.greetings_user);
-            // Fetch the profile picture on a background thread
-            fetchProfilePicture(m, userPFP);
-        }
+        change_user_data(m);
 
         // Setup the rest of your navigation and drawer behavior
         mAppBarConfiguration = new AppBarConfiguration.Builder(
@@ -93,6 +88,16 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+    }
+
+    public void change_user_data(String m) {
+        // Get intent and update UI elements
+        if (m != null && !m.isEmpty()) {
+            userMail.setText(m);
+            customText.setText(R.string.greetings_user);
+            // Fetch the profile picture on a background thread
+            fetchProfilePicture(m, userPFP);
+        }
     }
 
     public void fetchProfilePicture(String email, ImageView profileImageView) {

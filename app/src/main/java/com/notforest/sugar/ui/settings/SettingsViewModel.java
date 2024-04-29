@@ -1,3 +1,9 @@
+/*
+ *  Settings fragment to tweak the overall view of the application.
+ *
+ *  This fragment only does not call backend functions.
+ */
+
 package com.notforest.sugar.ui.settings;
 
 import androidx.lifecycle.LiveData;

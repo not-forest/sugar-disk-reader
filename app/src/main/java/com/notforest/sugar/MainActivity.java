@@ -13,6 +13,7 @@
 
 package com.notforest.sugar;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -26,6 +27,7 @@ import android.widget.TextView;
 
 import com.google.android.material.navigation.NavigationView;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -88,6 +90,17 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+
+        int selectedColor = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                .getInt("selectedColor", R.color.main);
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        getWindow().setStatusBarColor(selectedColor);
+        toolbar.setBackgroundColor(selectedColor);
     }
 
     public void change_user_data(String m) {

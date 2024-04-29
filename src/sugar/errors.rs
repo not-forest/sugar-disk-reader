@@ -124,6 +124,7 @@ impl Display for LoginError {
             Self::MALFORMED_TOKEN_HEADER => write!(f, "Malformed token header."),
             Self::KEY_PARSING_ERROR => write!(f, "Unable to parse keys from token validation requerst."),
             Self::NO_MATCH_DECODING_KEY => write!(f, "Unable to decode the verification key."),
+            Self::EMAIL_NOT_FOUND => write!(f, "Email not found."),
         }
     }
 }
@@ -165,6 +166,9 @@ impl Into<LoginError> for Error {
                 if s.contains("INVALID_EMAIL") {
                     return LoginError::INVALID_EMAIL
                 }
+                if s.contains("INVALID_PASSWORD") {
+                    return LoginError::INVALID_PASS
+                }
                 if s.contains("INVALID_LOGIN_CREDENTIALS") {
                     return LoginError::INVALID_LOGIN_CREDENTIALS
                 }
@@ -180,7 +184,7 @@ impl Into<LoginError> for Error {
                 if s.contains("Invalid ID token") || s.contains("Token isn't valid yet!") {
                     return LoginError::TOKEN_NOT_VALID
                 }
-                if s.contains("Token is expired") {
+                if s.contains("Token is expired") || s.contains("TOKEN_EXPIRED") {
                     return LoginError::TOKEN_EXPIRED
                 }
                 if s.contains("token header") {

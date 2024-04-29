@@ -6,7 +6,10 @@
 
 package com.notforest.sugar;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -18,6 +21,8 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Locale;
 
 public class LoginActivity extends AppCompatActivity {
     // Loads external dynamic libraries.
@@ -53,6 +58,14 @@ public class LoginActivity extends AppCompatActivity {
         // Initialization.
         SugarInit.rustInit(fileDir, cacheDir, extFileDir, extCacheDir); // Rust initialization.
 
+        // Visual init
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+
+        int selectedColor = prefs.getInt("selectedColor", R.color.main);
+        Locale chosenLocale = new Locale(prefs.getString("selectedLocale", "en".toString()));
+        getResources().getConfiguration().setLocale(chosenLocale);
+        getWindow().setStatusBarColor(selectedColor);
+
         // Trying to login via saved token credentials.
         String mail = loginFast();
         if (mail != null && !mail.isEmpty()) {
@@ -83,6 +96,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Setting up listeners.
         buttonLogin.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
                 // Reading from fields.
@@ -110,6 +124,10 @@ public class LoginActivity extends AppCompatActivity {
                         case 10:
                             mailErrorText.setText(R.string.error_mail_regex);
                             mailErrorText.setVisibility(View.VISIBLE);
+                            break;
+                        case 11:
+                            passwordErrorText.setText(R.string.error_pass_nomatch);
+                            passwordErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 30:
                             passwordErrorText.setText(R.string.error_invalid_credentials);

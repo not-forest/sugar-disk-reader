@@ -45,4 +45,11 @@
     <string name="new_email">New email</string>
     <string name="old_password">Old password</string>
     <string name="new_password">New password</string>
+    <string name="pick_color">Pick your color.</string>
+    <string name="set_color">Set chosen color</string>
+    <string name="pick_color_b">Pick Color</string>
+    <string name="color_customization">Color Customization</string>
+    <string name="choose_color">Choose Color</string>
+    <string name="open_color_picker">Open Color Picker</string>
+    <string name="language">Language</string>
 </resources>

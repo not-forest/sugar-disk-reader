@@ -153,6 +153,11 @@ public class ProfileFragment extends Fragment {
                             new_mail_err.setText(R.string.error_mail_used_new);
                             new_mail_err.setVisibility(View.VISIBLE);
                             break;
+                        case 32: // Expired token, previous login required
+                        case 33: // Token not valid, previous login required
+                        case 34: // Same.
+                        case 35: // Same.
+                        case 36: // Same.
                         case 40:
                             // No file means the user is not logged in for some reason.
                             Toast.makeText(
@@ -195,8 +200,12 @@ public class ProfileFragment extends Fragment {
                                     Toast.LENGTH_LONG
                             ).show();
                             break;
-                        case 40:
-                            // No file means the user is not logged in for some reason.
+                        case 32: // Expired token, previous login required
+                        case 33: // Token not valid, previous login required
+                        case 34: // Same.
+                        case 35: // Same.
+                        case 36: // Same.
+                        case 40: // No file means the user is not logged in for some reason.
                             Toast.makeText(
                                     mainActivity,
                                     "Please login again.",

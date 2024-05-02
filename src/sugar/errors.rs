@@ -138,11 +138,9 @@ impl Into<SignupError> for Error {
                 }
                 if s.contains("WEAK_PASSWORD") {
                     return SignupError::INVALID_PASS
-
                 }
                 if s.contains("EMAIL_EXISTS") {
                     return SignupError::EMAIL_EXISTS
-
                 }
                 if s.contains("TOO_MANY_ATTEMPTS_TRY_LATER") {
                     return SignupError::TOO_MANY_ATTEMPTS
@@ -196,6 +194,20 @@ impl Into<LoginError> for Error {
 
                 log::error!("Fatal error: {}", s);
                 panic!();  
+            }
+            Self::User(s) => {
+                if s.contains("WEAK_PASSWORD") {
+                    return LoginError::INVALID_PASS
+                }
+                if s.contains("INVALID_EMAIL") {
+                    return LoginError::INVALID_EMAIL
+                }
+                if s.contains("CREDENTIAL_TOO_OLD_LOGIN_AGAIN") {
+                    return LoginError::TOKEN_EXPIRED
+                }
+
+                log::error!("Fatal error: {}", s);
+                panic!(); 
             }
             _ => unreachable!(),
         }

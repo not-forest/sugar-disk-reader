@@ -61,6 +61,9 @@ public class SettingsFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         languageSpinner.setAdapter(adapter);
 
+        String currentLang = getResources().getConfiguration().locale.getDisplayLanguage();
+        languageSpinner.setSelection(adapter.getPosition(currentLang));
+
         languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {

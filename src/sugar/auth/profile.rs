@@ -127,10 +127,16 @@ pub async fn compare_pass(pass: String) -> bool {
 /// Makes a request to firebase for mail changing.
 #[tokio::main]
 pub async fn change_mail(mail: String) -> UserServiceStatus {
+    use crate::sugar::errors::SignupError;
     let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
+    // If the mail is the same, there is no need to load the server.  
+    if mail == get_user().await.ok().unwrap_or_default() {
+        return UserServiceStatus::SignupError(SignupError::EMAIL_EXISTS);
+    }
+    
     match LocalStorage::read::<SignInResponse>("login_response") {
-        Ok(res) => {
+        Ok(mut res) => {
             // Trying to change email, since we have obtained the token.
             match auth.change_email(&res.id_token, &mail, true).await {
                 Ok(secure_token) => {
@@ -138,12 +144,31 @@ pub async fn change_mail(mail: String) -> UserServiceStatus {
                     // Email is updated by that point.
                     log::info!("Changed mail successfully to: {}", &mail);
 
+                    // Since the email has changed, we manually changing the login info.
+                    res.email = mail;
+
+                    // Writing changes.
+                    if let Err(err) = LocalStorage::write(&res, "login_response") {
+                        return UserServiceStatus::StorageError(err)
+                    }
+
+                    // Writing new info about the updated user to the local storage for not
+                    // overloading the server.
                     match LocalStorage::write::<UpdateUser>(&secure_token, "secure_token") {
                         Ok(_) => UserServiceStatus::NoError,
                         Err(err) => UserServiceStatus::StorageError(err),
                     }
                 },
-                Err(err) => {
+                Err(err) => { 
+                    match &err {
+                        Error::User(s) => {
+                            if s.contains("EMAIL_EXISTS") {
+                                return UserServiceStatus::SignupError(SignupError::EMAIL_EXISTS)
+                            }
+                        }
+                        _ => (),
+                    }
+
                     log::error!("Obtained error while trying to change email: {}", err);
                     UserServiceStatus::LoginError(err.into())
                 }
@@ -158,9 +183,18 @@ pub async fn change_mail(mail: String) -> UserServiceStatus {
 /// Input data is required, because the application does not physically owns user's
 /// password and only establishes communication between firebase and the mobile.
 #[tokio::main]
-pub async fn change_pass(new_pass: String) -> UserServiceStatus {
+pub async fn change_pass(old_pass: String, new_pass: String) -> UserServiceStatus {
+    // If we will obtain a proper login response, it would mean that old_pass was correct.
+    if let Ok(mail) = get_user().await {
+        match super::usrsrv::service::login(mail, old_pass) {
+            UserServiceStatus::NoError => (), // Continuing.
+            status @ _ => return status, // Passing the status forward.
+        } 
+    }
+
     let auth = FireAuth::new(FIREBASE_API_KEY.to_string());
 
+    // Trying to change the password.
     match LocalStorage::read::<SignInResponse>("login_response") {
         Ok(res) => {
             // Trying to change email, since we have obtained the token.
@@ -170,6 +204,8 @@ pub async fn change_pass(new_pass: String) -> UserServiceStatus {
                     // Email is updated by that point.
                     log::info!("Changed password successfully to: {}", &new_pass);
 
+                    // Writing new info about the updated user to the local storage for not
+                    // overloading the server.
                     match LocalStorage::write::<UpdateUser>(&secure_token, "secure_token") {
                         Ok(_) => UserServiceStatus::NoError,
                         Err(err) => UserServiceStatus::StorageError(err),

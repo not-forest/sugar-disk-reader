@@ -51,6 +51,8 @@ public class SettingsFragment extends Fragment {
         root = inflater.inflate(R.layout.fragment_settings, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         SharedPreferences prefs = mainActivity.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+        int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
+        root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
 
         mColorPickerButton = root.findViewById(R.id.color_picker_button);
         mColorPickerButton.setOnClickListener(v -> showColorPicker(prefs, mainActivity));
@@ -161,6 +163,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        root.setBackgroundResource(0);
         root = null;
     }
 }

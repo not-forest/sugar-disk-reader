@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <EditText
+                android:id="@+id/editTextName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:hint="Enter machine name" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/main"
+                android:text="Select your target's architecture.">
+            </TextView>
+
+            <Spinner
+                android:id="@+id/spinnerArchitecture"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/architecture_list"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/main"
+                android:text="Select your target's OS.">
+            </TextView>
+
+            <Spinner
+                android:id="@+id/spinnerOS"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/os_options" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/main"
+                android:text="Select encryption type.">
+            </TextView>
+
+            <Spinner
+                android:id="@+id/spinnerEncryption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/encryption_options" />
+
+            <CheckBox
+                android:id="@+id/checkBoxErrorLog"
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Log errors directly on target's screen." />
+
+            <CheckBox
+                android:id="@+id/checkBoxDebugLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Log all debug information directly on target's screen." />
+
+            <CheckBox
+                android:id="@+id/checkBoxTransactionLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Set timeout watchdog if daemon will halt for too long." />
+
+            <EditText
+                android:id="@+id/editTextNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:hint="@string/machine_notes" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/main_variant_analogous_1"
+                android:text="Warning: Based on the configuration provided, daemon's binary size might vary. Make sure to take the most suitable configuration.">
+
+            </TextView>
+
+            <Button
+                android:id="@+id/add_arch_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:text="@string/add" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</LinearLayout>

@@ -126,7 +126,7 @@ public class LoginActivity extends AppCompatActivity {
                             mailErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 11:
-                            passwordErrorText.setText(R.string.error_pass_nomatch);
+                            passwordErrorText.setText(R.string.error_pass_wrong);
                             passwordErrorText.setVisibility(View.VISIBLE);
                             break;
                         case 30:

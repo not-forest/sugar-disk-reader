@@ -2,43 +2,44 @@
 <resources>
     <string name="app_name">Sugar</string>
 
-    <string name="hint_email">Email</string>
+    <string name="hint_email">Adres e-mail</string>
     <string name="hint_password">Hasło</string>
     <string name="hint_confirm_password">Potwierdź hasło</string>
     <string name="forgot_password">Zapomniałeś hasła?</string>
     <string name="guest_login">Logowanie gościa</string>
     <string name="register">Zarejestruj się</string>
     <string name="login">Zaloguj się</string>
-    <string name="login_failed">Logowanie nie powiodło się</string>
+    <string name="login_failed">Nieudane logowanie</string>
     <string name="signup">Zarejestruj się</string>
-    <string name="signup_failed">Rejestracja nie powiodła się</string>
+    <string name="signup_failed">Nieudana rejestracja</string>
     <string name="login_instead">Zaloguj się zamiast tego</string>
 
     <string name="error_mail_empty">Pole e-mail nie może być puste</string>
-    <string name="error_mail_used">Podany adres e-mail jest już w użyciu. Zaloguj się zamiast tego.</string>
+    <string name="error_mail_used">Podany adres e-mail jest już używany. Zaloguj się zamiast tego.</string>
     <string name="error_not_found">Użytkownik o takim adresie e-mail nie został znaleziony w systemie. Zarejestruj się zamiast tego.</string>
-    <string name="error_mail_used_new">Podany adres e-mail jest już w użyciu. Rozważ wybranie innego.</string>
-    <string name="error_mail_regex">Adres e-mail jest w złym formacie. Podaj poprawny adres, np. „example@gmail.com”</string>
+    <string name="error_mail_used_new">Podany adres e-mail jest już używany. Proszę wybrać inny.</string>
+    <string name="error_mail_regex">E-mail ma zły format. Proszę podać poprawny adres, np.: "przyklad@gmail.com"</string>
 
     <string name="error_pass_empty">Pole hasła nie może być puste.</string>
-    <string name="error_confirm_password_empty">Potwierdź hasło, które podałeś.</string>
+    <string name="error_confirm_password_empty">Proszę potwierdzić hasło.</string>
     <string name="error_pass_nomatch">Oba hasła muszą być takie same.</string>
-    <string name="error_pass_weak">Hasło jest za słabe. Upewnij się, że ma co najmniej 6 znaków.</string>
-    <string name="error_invalid_credentials">Adres e-mail lub hasło jest nieprawidłowe. Upewnij się, że wprowadziłeś wszystko prawidłowo.</string>
+    <string name="error_pass_wrong">Hasło jest niepoprawne. Upewnij się, że wszystko poprawnie wpisano.</string>
+    <string name="error_pass_weak">Hasło jest zbyt słabe. Upewnij się, że ma co najmniej 6 znaków.</string>
+    <string name="error_invalid_credentials">Albo e-mail, albo hasło jest nieprawidłowe. Upewnij się, że wszystko wpisałeś poprawnie.</string>
 
     <string name="title_activity_main">MainActivity</string>
     <string name="new_here">Nowy tutaj? Kliknij ten przycisk, aby dodać swoje urządzenie.</string>
-    <string name="navigation_drawer_open">Otwórz szufladę nawigacyjną</string>
-    <string name="navigation_drawer_close">Zamknij szufladę nawigacyjną</string>
+    <string name="navigation_drawer_open">Otwórz panel nawigacyjny</string>
+    <string name="navigation_drawer_close">Zamknij panel nawigacyjny</string>
     <string name="nav_header_title">Gość</string>
-    <string name="nav_header_subtitle">Zaloguj się, aby uzyskać lepsze wrażenia</string>
+    <string name="nav_header_subtitle">Zaloguj się, aby uzyskać lepsze doświadczenia</string>
     <string name="nav_header_desc">Nagłówek nawigacji</string>
     <string name="action_settings">Ustawienia</string>
 
     <string name="menu_home">Strona główna</string>
     <string name="nav_settings">Ustawienia</string>
     <string name="nav_profile">Profil</string>
-    <string name="greetings_user">Dziękujemy za wybór „Sugar”.</string>
+    <string name="greetings_user">Dziękujemy za wybór aplikacji „Sugar”.</string>
     <string name="change_email">Zmień e-mail</string>
     <string name="change_password">Zmień hasło</string>
     <string name="manage_profile">Zarządzaj</string>
@@ -49,8 +50,10 @@
     <string name="pick_color">Wybierz swój kolor.</string>
     <string name="set_color">Ustaw wybrany kolor</string>
     <string name="pick_color_b">Wybierz kolor</string>
-    <string name="color_customization">Dostosowanie kolorów</string>
+    <string name="color_customization">Dostosowanie koloru</string>
     <string name="choose_color">Wybierz kolor</string>
-    <string name="open_color_picker">Otwórz wybierak kolorów</string>
+    <string name="open_color_picker">Otwórz selektor kolorów</string>
     <string name="language">Język</string>
+    <string name="machine_notes">Notatki dotyczące urządzenia (Opcjonalnie)</string>
+    <string name="add">Dodaj</string>
 </resources>

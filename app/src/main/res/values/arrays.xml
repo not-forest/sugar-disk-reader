@@ -5,4 +5,23 @@
         <item>Polish</item>
         <item>Ukrainian</item>
     </string-array>
+
+    <string-array name="architecture_list">
+        <item>x86–64</item>
+        <item>x86</item>
+        <item>ARM</item>
+    </string-array>
+
+    <string-array name="encryption_options">
+        <item>AES-128</item>
+        <item>AES-192</item>
+        <item>AES-256</item>
+    </string-array>
+
+    <string-array name="os_options">
+        <item>Windows 7</item>
+        <item>Windows 8</item>
+        <item>Windows 10</item>
+        <item>Windows 11</item>
+    </string-array>
 </resources>

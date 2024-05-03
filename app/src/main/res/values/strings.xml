@@ -22,6 +22,7 @@
     <string name="error_pass_empty">Password field cannot be empty.</string>
     <string name="error_confirm_password_empty">Please confirm the password you provided.</string>
     <string name="error_pass_nomatch">Both passwords should match.</string>
+    <string name="error_pass_wrong">The password is wrong. Please make sure you typed everything correctly.</string>
     <string name="error_pass_weak">The password is too weak. Make sure it is at least 6 characters long.</string>
     <string name="error_invalid_credentials">Either email or password is wrong. Please make sure you wrote everything right.</string>
 
@@ -52,4 +53,6 @@
     <string name="choose_color">Choose Color</string>
     <string name="open_color_picker">Open Color Picker</string>
     <string name="language">Language</string>
+    <string name="machine_notes">Machine notes (Optional)</string>
+    <string name="add">Add</string>
 </resources>

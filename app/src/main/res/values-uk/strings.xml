@@ -4,53 +4,56 @@
 
     <string name="hint_email">Електронна пошта</string>
     <string name="hint_password">Пароль</string>
-    <string name="hint_confirm_password">Підтвердити пароль</string>
+    <string name="hint_confirm_password">Підтвердіть пароль</string>
     <string name="forgot_password">Забули пароль?</string>
-    <string name="guest_login">Гостьовий вхід</string>
+    <string name="guest_login">Вхід для гостя</string>
     <string name="register">Зареєструватися</string>
     <string name="login">Увійти</string>
     <string name="login_failed">Не вдалося увійти</string>
     <string name="signup">Зареєструватися</string>
-    <string name="signup_failed">Помилка реєстрації</string>
+    <string name="signup_failed">Не вдалося зареєструватися</string>
     <string name="login_instead">Увійти замість цього</string>
 
     <string name="error_mail_empty">Поле електронної пошти не може бути порожнім</string>
-    <string name="error_mail_used">Вказана адреса електронної пошти вже використовується. Будь ласка, увійдіть замість цього.</string>
-    <string name="error_not_found">Користувача з такою адресою електронної пошти не знайдено в системі. Будь ласка, зареєструйтеся замість цього.</string>
-    <string name="error_mail_used_new">Вказана адреса електронної пошти вже використовується. Розгляньте вибір іншої.</string>
-    <string name="error_mail_regex">Адреса електронної пошти має неправильний формат. Вкажіть правильну адресу, наприклад: „example@gmail.com”</string>
+    <string name="error_mail_used">Введена адреса електронної пошти вже використовується. Увійдіть замість цього.</string>
+    <string name="error_not_found">Користувач з такою адресою електронної пошти не знайдений в системі. Зареєструйтесь замість цього.</string>
+    <string name="error_mail_used_new">Введена адреса електронної пошти вже використовується. Будь ласка, виберіть іншу.</string>
+    <string name="error_mail_regex">Електронна пошта має неправильний формат. Будь ласка, введіть правильну адресу, наприклад: «example@gmail.com»</string>
 
     <string name="error_pass_empty">Поле пароля не може бути порожнім.</string>
-    <string name="error_confirm_password_empty">Підтвердіть пароль, який ви вказали.</string>
+    <string name="error_confirm_password_empty">Будь ласка, підтвердіть введений пароль.</string>
     <string name="error_pass_nomatch">Обидва паролі повинні співпадати.</string>
-    <string name="error_pass_weak">Пароль занадто слабкий. Переконайтеся, що він має принаймні 6 символів.</string>
-    <string name="error_invalid_credentials">Або адреса електронної пошти, або пароль неправильні. Переконайтеся, що ви все правильно ввели.</string>
+    <string name="error_pass_wrong">Неправильний пароль. Переконайтеся, що все введено правильно.</string>
+    <string name="error_pass_weak">Пароль занадто слабкий. Переконайтеся, що він має не менше 6 символів.</string>
+    <string name="error_invalid_credentials">Або електронна пошта, або пароль неправильні. Переконайтеся, що ви все правильно ввели.</string>
 
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">Головна діяльність</string>
     <string name="new_here">Новий тут? Натисніть цю кнопку, щоб додати свій пристрій.</string>
-    <string name="navigation_drawer_open">Відкрити шухляду навігації</string>
-    <string name="navigation_drawer_close">Закрити шухляду навігації</string>
+    <string name="navigation_drawer_open">Відкрити панель навігації</string>
+    <string name="navigation_drawer_close">Закрити панель навігації</string>
     <string name="nav_header_title">Гість</string>
     <string name="nav_header_subtitle">Увійдіть для кращого досвіду</string>
-    <string name="nav_header_desc">Заголовок навігації</string>
+    <string name="nav_header_desc">Навігаційний заголовок</string>
     <string name="action_settings">Налаштування</string>
 
     <string name="menu_home">Головна</string>
     <string name="nav_settings">Налаштування</string>
     <string name="nav_profile">Профіль</string>
-    <string name="greetings_user">Дякуємо за вибір „Sugar”.</string>
+    <string name="greetings_user">Дякуємо, що обрали «Sugar».</string>
     <string name="change_email">Змінити електронну пошту</string>
     <string name="change_password">Змінити пароль</string>
-    <string name="manage_profile">Керувати</string>
+    <string name="manage_profile">Керування</string>
     <string name="logout">Вийти</string>
     <string name="new_email">Нова електронна пошта</string>
     <string name="old_password">Старий пароль</string>
     <string name="new_password">Новий пароль</string>
     <string name="pick_color">Виберіть свій колір.</string>
     <string name="set_color">Встановити обраний колір</string>
-    <string name="pick_color_b">Виберіть колір</string>
-    <string name="color_customization">Налаштування кольорів</string>
-    <string name="choose_color">Вибрати колір</string>
-    <string name="open_color_picker">Відкрити вибірник кольорів</string>
+    <string name="pick_color_b">Вибрати колір</string>
+    <string name="color_customization">Налаштування кольору</string>
+    <string name="choose_color">Обрати колір</string>
+    <string name="open_color_picker">Відкрити вибір кольору</string>
     <string name="language">Мова</string>
+    <string name="machine_notes">Примітки до пристрою (необов'язково)</string>
+    <string name="add">Додати</string>
 </resources>

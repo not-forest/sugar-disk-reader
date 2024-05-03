@@ -58,7 +58,7 @@ pub enum SignupError {
 pub enum LoginError {
     /// Email is in wrong format.
     INVALID_EMAIL = 10,
-    /// Password is too short.
+    /// Wrong password.
     INVALID_PASS = 11,
     /// There is no user in firebase auth system with provided email.
     INVALID_LOGIN_CREDENTIALS = 30,

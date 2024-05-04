@@ -150,10 +150,11 @@ public class HomeFragment extends Fragment {
     private TextView createMachineTextView(String machineName, String machineArchitecture, String machineNotes) {
         TextView machineTextView = new TextView(getContext());
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+                0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+                1.0f
         );
-        textParams.setMargins(50, 20, 50, 20);
+        textParams.setMargins(50, 20, 0, 20);
         machineTextView.setLayoutParams(textParams);
         StringBuilder displayText = new StringBuilder();
         displayText.append("Name: ").append(machineName).append("\t\t\tArchitecture: ").append(machineArchitecture);
@@ -164,6 +165,7 @@ public class HomeFragment extends Fragment {
         machineTextView.setTextSize(18);
         return machineTextView;
     }
+
 
     private ImageButton createCloseButton(File machineFile, String machineName) {
         ImageButton closeButton = new ImageButton(getContext());

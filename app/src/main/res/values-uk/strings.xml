@@ -54,6 +54,6 @@
     <string name="choose_color">Обрати колір</string>
     <string name="open_color_picker">Відкрити вибір кольору</string>
     <string name="language">Мова</string>
-    <string name="machine_notes">Примітки до пристрою (необов'язково)</string>
+    <string name="machine_notes">Примітки до пристрою (необов\'язково)</string>
     <string name="add">Додати</string>
 </resources>

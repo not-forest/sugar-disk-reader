@@ -186,9 +186,9 @@ pub mod android {
     ) -> u8 {
         log::info!("Begin: change password");
         // Converting
-        //let old = env.get_string(&pass_old).expect("Could not parse Java string.").into();
+        let old = env.get_string(&pass_old).expect("Could not parse Java string.").into();
         let new = env.get_string(&pass_new).expect("Could not parse Java string.").into();
 
-        change_pass(new).into()
+        change_pass(old, new).into()
     }
 }

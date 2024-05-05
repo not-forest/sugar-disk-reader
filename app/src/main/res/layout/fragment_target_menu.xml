@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/machine_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="25dp"
+            android:text=""
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/machine_architecture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machine_name"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/machine_os"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machine_architecture"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/machine_encryption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machine_os"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/machine_notes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machine_encryption"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:id="@+id/status_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machine_notes"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/machine_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status:"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/machine_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Offline"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/status_layout"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/transparent"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <ScrollView
+                    android:id="@+id/terminal_scroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="350dp"
+                    android:background="@color/main_transparent">
+
+                    <TextView
+                        android:id="@+id/terminal_output"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text=">"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp" />
+                </ScrollView>
+
+                <EditText
+                    android:id="@+id/terminal_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/darker_gray"
+                    android:hint=">"
+                    android:inputType="text"
+                    android:imeOptions="actionSend"
+                    android:textColor="@android:color/white"
+                    android:padding="8dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <ImageView
+            android:id="@+id/power_button"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="55dp"
+            android:layout_below="@id/cardView"
+            android:src="@drawable/circular_button_background"
+            android:padding="8dp" />
+
+    </RelativeLayout>
+</ScrollView>

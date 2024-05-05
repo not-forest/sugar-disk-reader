@@ -9,7 +9,13 @@
         android:id="@+id/nav_home"
         android:name="com.notforest.sugar.ui.home.HomeFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_nav_home_to_nav_target"
+            app:destination="@id/nav_target"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"/>
+    </fragment>
 
     <fragment
         android:id="@+id/nav_settings"
@@ -22,4 +28,10 @@
         android:name="com.notforest.sugar.ui.profile.ProfileFragment"
         android:label="@string/nav_profile"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/nav_target"
+        android:name="com.notforest.sugar.ui.home.TargetFragment"
+        android:label="Target"
+        tools:layout="@layout/fragment_target_menu" />
 </navigation>

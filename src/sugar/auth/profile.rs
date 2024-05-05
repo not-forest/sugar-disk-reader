@@ -118,12 +118,6 @@ pub async fn get_current_pass() -> Result<String, UserServiceStatus> {
     }
 }
 
-/// Compared the given password with a hashed value obtained from
-/// the current session.
-pub async fn compare_pass(pass: String) -> bool {
-    unimplemented!()
-}
-
 /// Makes a request to firebase for mail changing.
 #[tokio::main]
 pub async fn change_mail(mail: String) -> UserServiceStatus {

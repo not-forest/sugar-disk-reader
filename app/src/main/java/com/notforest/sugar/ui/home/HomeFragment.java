@@ -11,6 +11,7 @@ package com.notforest.sugar.ui.home;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -29,6 +30,8 @@ import androidx.cardview.widget.CardView;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavDirections;
+import androidx.navigation.Navigation;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.notforest.sugar.MainActivity;
@@ -56,7 +59,8 @@ public class HomeFragment extends Fragment {
         root = inflater.inflate(R.layout.fragment_home, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
-            setBackgroundResourceRandomly(mainActivity);
+            int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
+            root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
         }
 
         addButton = root.findViewById(R.id.add_button);
@@ -69,11 +73,6 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
-    private void setBackgroundResourceRandomly(MainActivity mainActivity) {
-        int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
-        root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
-    }
-
     private void openAddArchitectureFragment() {
         AddArchitectureFragment dialogFragment = new AddArchitectureFragment();
         dialogFragment.show(getParentFragmentManager(), "AddArchitectureFragment");
@@ -84,7 +83,8 @@ public class HomeFragment extends Fragment {
         if (architectureDirs != null) {
             for (File architectureDir : architectureDirs) {
                 File[] machineFiles = architectureDir.listFiles();
-                if (machineFiles != null) {
+                if (machineFiles != null && machineFiles.length > 0) {
+                    root.findViewById(R.id.cardView).setVisibility(View.INVISIBLE);
                     for (File machineFile : machineFiles) {
                         try {
                             displayMachineDetails(machineFile);
@@ -93,6 +93,8 @@ public class HomeFragment extends Fragment {
                             showErrorToast();
                         }
                     }
+                } else {
+                    root.findViewById(R.id.cardView).setVisibility(View.VISIBLE);
                 }
             }
         }
@@ -119,6 +121,7 @@ public class HomeFragment extends Fragment {
         cardContentLayout.addView(machineTextView);
         cardContentLayout.addView(closeButton);
         cardView.addView(cardContentLayout);
+        cardView.setOnClickListener(v -> openMachineDetailsFragment(machineFile));
         machineListLayout.addView(cardView);
     }
 
@@ -204,5 +207,57 @@ public class HomeFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         getActivity().finish();
         startActivity(intent);
+    }
+
+    private void openMachineDetailsFragment(File machineFile) {
+        try {
+            FileInputStream inputStream = new FileInputStream(machineFile);
+            int size = inputStream.available();
+            byte[] buffer = new byte[size];
+            inputStream.read(buffer);
+            inputStream.close();
+            String json = new String(buffer, "UTF-8");
+
+            JSONObject machineJson = new JSONObject(json);
+            String machineName = machineJson.optString("name");
+            String machineArchitecture = machineJson.optString("architecture");
+            String machineNotes = machineJson.optString("notes");
+            String targetOS = machineJson.optString("os");
+            String encryption = machineJson.optString("encryption");
+
+            Bundle bundle = new Bundle();
+            bundle.putString("machine_name", machineName);
+            bundle.putString("machine_architecture", machineArchitecture);
+            bundle.putString("machine_notes", machineNotes);
+            bundle.putString("os", targetOS);
+            bundle.putString("encryption", encryption);
+
+            // Instead of creating a new instance of TargetFragment, navigate using the action
+            NavDirections action = new NavHomeToNavTarget();
+            Navigation.findNavController(requireView()).navigate(action.getActionId(), bundle);
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            showErrorToast();
+        }
+    }
+
+}
+
+class NavHomeToNavTarget implements NavDirections {
+    @Override
+    public int getActionId() {
+        return R.id.action_nav_home_to_nav_target;
+    }
+
+    @NonNull
+    @Override
+    public Bundle getArguments() {
+        Bundle args = new Bundle();
+
+        return args;
+    }
+
+    public static NavDirections actionNavHomeToNavTarget() {
+        return new NavHomeToNavTarget();
     }
 }

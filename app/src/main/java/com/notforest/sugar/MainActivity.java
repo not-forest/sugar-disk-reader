@@ -172,8 +172,8 @@ public class MainActivity extends AppCompatActivity {
             URL url = new URL(imageUrl);
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
-            connection.setConnectTimeout(5000); // 5 seconds connect timeout
-            connection.setReadTimeout(5000); // 5 seconds read timeout
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
             connection.connect();
 
             input = connection.getInputStream();

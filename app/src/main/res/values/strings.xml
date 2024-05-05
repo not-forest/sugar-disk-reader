@@ -55,4 +55,7 @@
     <string name="language">Language</string>
     <string name="machine_notes">Machine notes (Optional)</string>
     <string name="add">Add</string>
+
+    <string name="error_unknown_command_1">Unknown command: "</string>
+    <string name="error_unknown_command_2">". Please write help for the list of all available commands.</string>
 </resources>

@@ -23,6 +23,19 @@ pub mod sugar {
 
         pub use usrsrv::service;
     }
+
+    /// Connection handling.
+    ///
+    /// Main application logic lays here. Connects an android mobile device to a target
+    /// architecture via a USB connection by mainly using ported hidapi library.
+    pub mod conn {
+        /// Main communication bridge.
+        pub mod bridge;
+        mod buf;
+
+        pub use bridge::Bridge;
+    }
+
     /// Application defined errors with status codes.
     pub mod errors;
     /// All external API related symbols.

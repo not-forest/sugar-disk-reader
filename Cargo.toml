@@ -7,9 +7,11 @@ edition = "2021"
 # Build dependencies
 [dependencies]
 # Application's logic related imports.
-pwhash = "1.0.0"
+hsh = "0.0.7"
 regex =  "1.10.4"
 lazy_static = "1.4.0"
+hidapi = "2.6.1"
+libusb = "0.3.0"
 
 # Async
 tokio = { version = "1.36.0", features = ["full"]}

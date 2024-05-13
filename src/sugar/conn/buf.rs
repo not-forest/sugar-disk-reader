@@ -22,9 +22,10 @@ pub(crate) trait Buffer: Send + Sync + 'static {
 ///
 /// Communication is done in half duplex, where writes are less common than reads. All
 /// I/O is done via hidapi protocol.
+#[derive(Debug)]
 pub(crate) struct USBV2Buf {
-    _in: [u8; INPUT_BUFFER_SIZE],
-    _out: [u8; OUTPUT_BUFFER_SIZE],
+    pub _in: [u8; INPUT_BUFFER_SIZE],
+    pub _out: [u8; OUTPUT_BUFFER_SIZE],
     read_ptr: usize,
     write_ptr: usize,
 }
@@ -69,7 +70,7 @@ impl Buffer for USBV2Buf {
 
     fn write(&mut self, dev: &HidDevice) -> Result<usize, BufferError> {
         let ptr = self.write_ptr;
-        let offset = self._out[ptr];
+        let offset = self._in[ptr];
 
         self._write(dev, ptr, offset as usize)
     }
@@ -78,13 +79,13 @@ impl Buffer for USBV2Buf {
 impl USBV2Buf {
     fn _write(&mut self, dev: &HidDevice, ptr: usize, offset: usize) -> Result<usize, BufferError> {
         use HidError::*;
-        let slice = self._out[ptr .. ptr + offset].as_ref();
+        let slice = self._in[ptr .. ptr + offset].as_ref();
 
         // Writing the slice in.
         match dev.write(slice) {
             Ok(len) => {
                 // Moving the pointer forward without overflowing.
-                if self.write_ptr.saturating_add(len) > OUTPUT_BUFFER_SIZE {
+                if self.write_ptr.saturating_add(len) > INPUT_BUFFER_SIZE {
                     self.write_ptr = 0;
                 }; 
 
@@ -103,6 +104,7 @@ impl USBV2Buf {
 }
 
 /// Parsed error that can be obtained while doing operations on buffer.
+#[derive(Debug)]
 pub enum BufferError {
     NoData,
     BadInput,

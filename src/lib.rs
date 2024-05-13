@@ -31,9 +31,11 @@ pub mod sugar {
     pub mod conn {
         /// Main communication bridge.
         pub mod bridge;
+        pub mod cmd;
         mod buf;
 
         pub use bridge::Bridge;
+        pub use bridge::service;
     }
 
     /// Application defined errors with status codes.
@@ -67,6 +69,7 @@ pub mod android {
     use android_logger::{Config, FilterBuilder};
     use sugar::auth::profile::{change_mail, change_pass};
     use sugar::auth::service::{fast_login, login, logout, signup};
+    use sugar::conn::service::{connect, disconnect};
     use sugar::auth::usrsrv::UserServiceStatus;
     use sugar::storage::{FILES_DIR, CACHE_DIR, EXT_FILES_DIR, EXT_CACHE_DIR};
 
@@ -203,5 +206,12 @@ pub mod android {
         let new = env.get_string(&pass_new).expect("Could not parse Java string.").into();
 
         change_pass(old, new).into()
+    }
+
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_connect() -> u8 {
+        log::info!("Begin: connect");
+
+        connect() as u8
     }
 }

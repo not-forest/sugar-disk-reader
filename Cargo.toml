@@ -7,11 +7,11 @@ edition = "2021"
 # Build dependencies
 [dependencies]
 # Application's logic related imports.
+hidapi = { version = "2.6.1", default-features = false, features = ["linux-shared-libusb"] }
 hsh = "0.0.7"
 regex =  "1.10.4"
 lazy_static = "1.4.0"
-hidapi = "2.6.1"
-libusb = "0.3.0"
+rand = "0.8.5"
 
 # Async
 tokio = { version = "1.36.0", features = ["full"]}

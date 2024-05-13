@@ -1,18 +1,21 @@
 //! Main application interfaces for connection with a target device.
 //!
 //! This module handles all bridge related tasks, that includes connecting, disconnecting and
-//! handling all commands that are comming from the target device and from the mobilw device. 
+//! handling all commands that are coming from the target device and from the mobile device. 
 
 use std::sync::Arc;
 use std::any::Any;
 use std::thread;
-use std::mem;
 
 use tokio::sync::{Mutex, mpsc::{self, Sender}};
 use hidapi::{BusType, HidApi, HidDevice, HidError};
 
 use crate::sugar::conn::buf::BufferError;
-use super::buf::{Buffer, USBV2Buf};
+use crate::sugar::parse::SugarParser;
+use super::{
+    buf::{Buffer, USBV2Buf},
+    cmd::DaemonCommand,
+};
 
 pub type BridgeResult<T> = Result<T, BridgeError>;
 type DataBuffer = Arc<Mutex<Box<dyn Buffer>>>;
@@ -20,6 +23,19 @@ type Device = Arc<Mutex<HidDevice>>;
 type Tx = Option<Sender<DaemonCommand>>;
 
 const CHANNEL_BUFFER_SIZE: usize = 1024;
+
+/// Custom error type for bridge communication.
+pub enum BridgeError {
+    /// Appears when trying to close a bridge, which is yet not initialized fully.
+    BridgeNotReady,
+    /// Appears when the target device has refused a connection. Can happen when trying to connect
+    /// to a device when it is already is connected or when the bridge ID does not match.
+    ConnectionRefused,
+    /// Connection to the device has timed out.
+    ConnectionTimeout,
+    /// Unable to send any data to the bridge since it is closed.
+    BridgeClosed,
+}
 
 /// A custom structure that is being created on each communication between target devices.
 ///
@@ -46,10 +62,11 @@ impl Bridge {
     /// information for a proper communication.
     pub fn new(id: usize) -> Result<Option<Self>, HidError> {
         log::info!("Creating a new communication bridge");
-        let api = HidApi::new()?;
+        let api = HidApi::new_without_enumerate()?;
         // Only one device is logical in our case, because the host is a mobile device.
         if let Some(dev_info) = api.device_list()
                 .into_iter()
+                .map(|d| { log::info!("dev: {:#?}", d); d })
                 .find(|d| d.bus_type().type_id() == BusType::Usb.type_id()) // Finding the first USB connected device.
         {
             let dev = dev_info.open_device(&api)?;  // Initializing the HIDAPI.
@@ -77,7 +94,8 @@ impl Bridge {
             return Ok(Some(Self::new_v2(dev, id)))
         }
 
-        Ok(None) // No devices connected to the port.
+        log::info!("No devices connected to the port.");
+        Ok(None)
     } 
     
     /// Connects the existing bridge to start the communication.
@@ -85,8 +103,10 @@ impl Bridge {
     /// While connected, listens to any upcoming data from the target machine as well as from the
     /// host device. 
     pub async fn connect(&mut self) -> BridgeResult<()> {
+        log::info!("Connecting to the bridge...");
         let cpus = thread::available_parallelism().unwrap();
         let (tx, mut rx) = mpsc::channel::<DaemonCommand>(CHANNEL_BUFFER_SIZE);
+        log::info!("Available threads: {}", cpus);
 
         // Checks for the upcoming stream from the target device.
         for i in 0..cpus.into() {
@@ -105,23 +125,36 @@ impl Bridge {
                     // If new data exist, reading it.
                     match buffer.read(&dev) {
                         Ok(bytes) => {
+                            log::info!("Thread ({}): Obtained oncoming data: {}", i, bytes.escape_ascii());
                             // Sending the command for parsing.
-                            tx.send(DaemonCommand::new(bytes));
+                            if let Err(tx_err) = tx.send(DaemonCommand::new(bytes)).await {
+                                log::error!("Thread ({}): Unable to send data: {}, channel is closed, aborting...", i, tx_err);
+                                break; // Breaking out of the loop awaits the data.
+                            }
                         },
-                        Err(hid_err) => match hid_err {
-                            _ => (),
+                        Err(buf_err) => {
+                            match buf_err {
+                                BufferError::NoData => continue,
+                                _ => log::error!("Thread ({}): Error while reading the data from the USB bus: {:#?}", i, buf_err), 
+                            }
                         },
                     };
                 }
             });
         }
+
+        log::info!("Connection established. Writing the initialization command..."); 
+        // Sending the init command right away. It must always be Ok since we havent even closed
+        // the channel yet.
+        tx.send(DaemonCommand::init(self._id)).await.ok();
         self.tx.replace(tx); // after this replacement, it is possible to disconnect.
 
         // All obtained bytes are then parsed and sent to the front-end or to the target device.
         while let Some(bytes) = rx.recv().await {
-            unimplemented!()
+            SugarParser::parse_byte_code(self, bytes);
         }
 
+        log::info!("Bridge is closed.");
         Ok(()) // A properly closed bridge.
     }
 
@@ -130,7 +163,10 @@ impl Bridge {
     /// If the Tx is not ready yet, halts until it appears.
     pub async fn disconnect(&self) -> BridgeResult<()> {
         if let Some(tx) = &self.tx {
-            tx.send(DaemonCommand::user_disconnect());
+            if let Err(tx_err) = tx.send(DaemonCommand::user_disconnect()).await {
+                log::error!("Unable to disconnect the bridge: {}", tx_err);
+                return Err(BridgeError::BridgeClosed);
+            }
 
             Ok(())
         } else { Err(BridgeError::BridgeNotReady) }
@@ -147,153 +183,47 @@ impl Bridge {
     }
 }
 
-/// Custom error type for bridge communication.
-pub enum BridgeError {
-    /// Appears when trying to close a bridge, which is yet not initialized fully.
-    BridgeNotReady,
-    /// Appears when the target device has refused a connection. Can happen when trying to connect
-    /// to a device when it is already is connected or when the bridge ID does not match.
-    ConnectionRefused,
-    /// Connection to the device has timed out.
-    ConnectionTimeout,
-}
+pub mod service {
+    use hidapi::HidError;
 
-/// A bytecode command that is being used to communicate between two devices.
-///
-/// All commands are represented as a set of bytes, where size decides how much bytes are in the
-/// command including the size byte and a checksum.
-///
-/// # Representation:
-///
-///          (opt)                     (opt)
-/// *------*--------*---------*------*----------*
-/// | SIZE | PREFIX | COMMAND | DATA | CHECKSUM |
-/// *------*--------*---------*------*----------*
-///
-/// The size of the command can vary a lot based on the command itself and data that comes with it.
-/// Some fields like a prefix and data can be optional. Commands are parsed sequentially, therefore
-/// they can be stacked.
-#[repr(transparent)]
-pub struct DaemonCommand(Vec<DaemonCommandByte>);
+    use super::{Bridge, BridgeError};
 
-impl DaemonCommand {
-    /// Creates a new daemon command based on the obtained slice of bytes. 
-    pub fn new(slice: &[u8]) -> Self {
-        Self(unsafe{ mem::transmute(slice.to_vec()) })
-    }
+    #[tokio::main]
+    pub async fn connect() -> ConnectionStatus {
+        let id = rand::random();
 
-    pub fn init(id: usize) -> Self {
-        use DaemonCommandByte::*;
-        let id = id.to_ne_bytes();
-
-        unimplemented!()
-        //crate::dcommand!(REQ, CONN, BID, id)
-    }
-
-    /// This command is being sent only by user from the front-end side.
-    pub fn user_disconnect() -> Self {
-        use DaemonCommandByte::*;
-        // Triple acknowledgement is a high priority operation that will always mean that the user
-        // wants to perform something. In this case the shutdown.
-        crate::dcommand!(SHUT, ACK, ACK, ACK)
-    }
-}
-
-/// Convenient macro to create a custom command
-///
-/// It allows for any amount of arguments, as long as it is less than u8::MAX;
-#[macro_export]
-macro_rules! dcommand {
-    ($($args:tt),*) => {{
-        let all = [$($args),*];
-        let size = all.len() + 2;
-    
-        assert!(size < u8::MAX.into(), "The amount of bytes in one command cannot be bigger than u8::MAX.");
-
-        let mut v = Vec::with_capacity(size);
-        let checksum = size as u8;
-
-        v.push(size.into()); // Pushing the size first.
-        for arg in all {
-            // Pushing all 
-            checksum.wrapping_add(Into::<u8>::into(arg));
-            v.push(arg)
+        match Bridge::new(id) {
+            Ok(op) => match op {
+                Some(mut bridge) => {
+                    if let Err(err) = bridge.connect().await {
+                        match err {
+                            BridgeError::BridgeClosed => ConnectionStatus::BridgeClosed,
+                            BridgeError::ConnectionRefused => ConnectionStatus::Refused,
+                            BridgeError::ConnectionTimeout => ConnectionStatus::Timeout,
+                            _ => unreachable!()
+                        }
+                    } else {
+                        ConnectionStatus::Connected
+                    }
+                },
+                None => ConnectionStatus::NoDevice,
+            },
+            Err(_err) => todo!(),
         }
-
-        // Obtaining the amount of bytes to add for this command, so that the overall sum will be 0
-        let checksum = u8::MAX - checksum;
-        v.push(checksum.into());
-
-        DaemonCommand(v)
-    }};
-    () => (unreachable!());
-}
-
-/// A byte value of a command for both daemon and an application to communicate. 
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum DaemonCommandByte {
-    // Prefixes (Second byte of the command.)
-
-    /// Request to do something that requires an acknowledgement.
-    REQ =   0x00,
-    /// Acknowledgement from the other side that allows to proceed to execute.
-    ACK =   0x01,
-    /// No acknowledgement, means no execution will happen and may come with additional info
-    NACK =  0x02,
-
-    // Helpers
-
-    /// The size of something that comes then after the next byte after the next one. Basically
-    /// that means that the next byte is the amount of bytes to read and those bytes must be
-    /// represented as something.
-    SIZE =   0xff,
-
-    // Commands
-    
-    /// Asks for a connection. Must be performed at the very start. Bridge's ID comes after this
-    /// command.
-    CONN =  0x03,
-    /// Asks for a proper shutdown. Will close the connection and shutdown the daemon software.
-    SHUT =  0x04,
-
-    /// Select the disk or partition. After this command, daemon will expect the disk number or
-    /// partition name.
-    SEL =   0x05,
-    /// Removes the selection of the disk or partition.
-    UNSEL = 0x06,
-    /// Reads files. The following data might vary.
-    READ =  0x07,
-
-    // Data parse prefix
-
-    /// Name comes after this byte.
-    NAME =  0x20,
-    /// Partition
-    PART =  0x21,
-    /// File
-    FILE =  0x22,
-    /// Directory
-    DIR =   0x23,
-    /// Bridge's id.
-    BID =   0x24,
-}
-
-impl Into<u8> for DaemonCommandByte {
-    fn into(self) -> u8 {
-        self as u8
     }
-}
 
-impl Into<DaemonCommandByte> for u8 {
-    fn into(self) -> DaemonCommandByte {
-        unsafe{ mem::transmute(self) }
+    pub async fn disconnect() -> ConnectionStatus {
+       unimplemented!() 
     }
-}
 
-
-impl Into<DaemonCommandByte> for usize {
-    fn into(self) -> DaemonCommandByte {
-        unsafe{ mem::transmute(self as u8) }
+    /// Local enum to represent the current status of the connection.
+    #[repr(u8)]
+    pub enum ConnectionStatus {
+        Connected           = 0, 
+        Disconnected        = 1, 
+        NoDevice            = 2, 
+        BridgeClosed        = 3, 
+        Refused             = 4,  
+        Timeout             = 5, 
     }
 }

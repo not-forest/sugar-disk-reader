@@ -31,12 +31,14 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.notforest.sugar.LoginActivity;
 import com.notforest.sugar.MainActivity;
 import com.notforest.sugar.R;
 
@@ -44,6 +46,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TargetFragment extends Fragment {
+
+    // Loads external dynamic libraries.
+    static {
+        System.loadLibrary("sugar_jni");
+    }
+
+    // Native JNI interface for Rust backend.
+    /* Tries to connect to the target device by starting the new bridge. */
+    private static native int connect();
+    /* Tries to disconnect from the target device by sending a shutdown command. */
+    private static native int disconnect();
 
     private View root;
     private TextView machineNameTextView,
@@ -130,7 +143,18 @@ public class TargetFragment extends Fragment {
 
         powerButton.setOnClickListener(v -> {
             Log.d("POWER", POWER ? "ON" : "OFF");
-            // TODO!!!
+
+            if (!POWER) {
+                switch (connect()) {
+                    default:
+                        displayMessage("error: " + R.string.error_unknown_error);
+                }
+            } else {
+                switch (disconnect()) {
+                    default:
+                        displayMessage("error: " + R.string.error_unknown_error);
+                }
+            }
         });
 
         return root;

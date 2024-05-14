@@ -59,4 +59,8 @@
     <string name="error_unknown_command_1">Unknown command: "</string>
     <string name="error_unknown_command_2">". Please write help for the list of all available commands.</string>
     <string name="error_unknown_error">"Unknown error has occured."</string>
+    <string name="error_device_null">No device located on the USB bus. Please connect the device first.</string>
+
+    <string name="connecting_to_device">Connecting…  </string>
+    <string name="connected_to_device">Connected to device: </string>
 </resources>

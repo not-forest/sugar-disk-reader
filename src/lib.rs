@@ -209,9 +209,13 @@ pub mod android {
     }
 
     #[no_mangle]
-    pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_connect() -> u8 {
+    pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_connect(
+        mut env: JNIEnv,
+        _: JClass,
+        file_desc: i32,
+    ) ->u8 {
         log::info!("Begin: connect");
 
-        connect() as u8
+        connect(file_desc) as u8
     }
 }

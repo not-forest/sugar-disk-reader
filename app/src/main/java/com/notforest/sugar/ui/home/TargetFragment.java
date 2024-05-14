@@ -12,11 +12,16 @@
 
 package com.notforest.sugar.ui.home;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -43,6 +48,7 @@ import com.notforest.sugar.MainActivity;
 import com.notforest.sugar.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class TargetFragment extends Fragment {
@@ -54,9 +60,14 @@ public class TargetFragment extends Fragment {
 
     // Native JNI interface for Rust backend.
     /* Tries to connect to the target device by starting the new bridge. */
-    private static native int connect();
+    private static native int connect(int fd);
     /* Tries to disconnect from the target device by sending a shutdown command. */
     private static native int disconnect();
+    /* Tries to obtain the current connection info as a string, from Rust. */
+    private static native String conn_info();
+
+    // Define the permission intent action
+    private static final String ACTION_USB_PERMISSION = "com.notforest.sugar.USB_PERMISSION";
 
     private View root;
     private TextView machineNameTextView,
@@ -73,6 +84,7 @@ public class TargetFragment extends Fragment {
     private Drawable buttonBackground;
     private boolean POWER;
     private static final String SHARED_PREFS_NAME = "MessageBuffer";
+    private UsbManager usbManager;
 
     @Nullable
     @Override
@@ -89,6 +101,20 @@ public class TargetFragment extends Fragment {
         buttonBackground = powerButton.getDrawable();
 
         MainActivity mainActivity = (MainActivity) getActivity();
+        usbManager = (UsbManager) mainActivity.getSystemService(Context.USB_SERVICE);
+        Intent intent = mainActivity.getIntent();
+
+        if (usbManager == null)
+        {
+            Log.e("UsbPermissions", "No device manager found!");
+        }
+
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(requireContext(), 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
+        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        for (UsbDevice usbDevice : deviceList.values()) {
+            usbManager.requestPermission(usbDevice, permissionIntent);
+        }
+
         if (mainActivity != null) {
             int randomIndex = (int) (Math.random() * mainActivity.backgroundDrawables.length);
             root.setBackgroundResource(mainActivity.backgroundDrawables[randomIndex]);
@@ -143,19 +169,33 @@ public class TargetFragment extends Fragment {
 
         powerButton.setOnClickListener(v -> {
             Log.d("POWER", POWER ? "ON" : "OFF");
+            UsbDevice chosenDevice = deviceList.isEmpty() ? null : deviceList.values().iterator().next();
 
-            if (!POWER) {
-                switch (connect()) {
-                    default:
-                        displayMessage("error: " + R.string.error_unknown_error);
-                }
+            if (chosenDevice == null) {
+                displayMessage("error: " + getString(R.string.error_device_null));
+                return;
             } else {
-                switch (disconnect()) {
-                    default:
-                        displayMessage("error: " + R.string.error_unknown_error);
+                if (!POWER) {
+                    displayMessage(getString(R.string.connecting_to_device) + chosenDevice.getDeviceName());
+                    UsbDeviceConnection usbDeviceConnection = usbManager.openDevice(chosenDevice);
+                    int fileDescriptor = usbDeviceConnection.getFileDescriptor();
+                    switch (connect(fileDescriptor)) {
+                        case 0:
+                            POWER = true;
+                            sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), false).apply();
+                            displayMessage("info:" + getString(R.string.connected_to_device) + conn_info());
+                        default:
+                            displayMessage("error: " + getString(R.string.error_unknown_error));
+                    }
+                } else {
+                    switch (disconnect()) {
+                        default:
+                            displayMessage("error: " + getString(R.string.error_unknown_error));
+                    }
                 }
             }
         });
+
 
         return root;
     }
@@ -177,6 +217,9 @@ public class TargetFragment extends Fragment {
             SpannableString spannableString = new SpannableString(message + "\n");
             if (message.toLowerCase().startsWith(" > error:")) {
                 spannableString.setSpan(new ForegroundColorSpan(Color.RED), 0, spannableString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            if (message.toLowerCase().startsWith(" > info:")) {
+                spannableString.setSpan(new ForegroundColorSpan(Color.YELLOW), 0, spannableString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             builder.append(spannableString);
         }

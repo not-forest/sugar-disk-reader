@@ -1,6 +1,5 @@
-//! Communication buffer implementation.
 
-use hidapi::{HidDevice, HidError};
+use rusb::{DeviceHandle, Error as RusbError};
 
 /// Amount of bytes that will be held for user's commands input.
 const INPUT_BUFFER_SIZE: usize = 128;
@@ -8,20 +7,20 @@ const INPUT_BUFFER_SIZE: usize = 128;
 const OUTPUT_BUFFER_SIZE: usize = 512;
 
 /// Communication timeout for one atomic read/write in ms.
-const TIMEOUT: i32 = 2000;
+const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(2000);
 
 /// Custom trait for buffers.
-pub(crate) trait Buffer: Send + Sync + 'static { 
+pub(crate) trait Buffer: Send + Sync + 'static {
     /// Reads data from the bus and returns read bytes.
-    fn read(&mut self, dev: &HidDevice) -> Result<&[u8], BufferError>;
+    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], BufferError>;
     /// Writes data to the bus and returns the amount of bytes written.
-    fn write(&mut self, dev: &HidDevice) -> Result<usize, BufferError>;
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, BufferError>;
 }
 
 /// Buffer for USB v2.0.
 ///
 /// Communication is done in half duplex, where writes are less common than reads. All
-/// I/O is done via hidapi protocol.
+/// I/O is done via libusb protocol.
 #[derive(Debug)]
 pub(crate) struct USBV2Buf {
     pub _in: [u8; INPUT_BUFFER_SIZE],
@@ -42,63 +41,51 @@ impl Default for USBV2Buf {
 }
 
 impl Buffer for USBV2Buf {
-    fn read(&mut self, dev: &HidDevice) -> Result<&[u8], BufferError> {
-        use HidError::*;
+    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], BufferError> {
         let ptr = self.read_ptr;
-        let slice = self._out[ptr..].as_mut();
+        let slice = &mut self._out[ptr..];
 
         // Reading with defined timeout.
-        match dev.read_timeout(slice, TIMEOUT) {
+        match dev.read_bulk(1, slice, TIMEOUT) {
             Ok(len) => {
                 // Reading the latest data.
-                let data = self._out[ptr .. ptr + len].as_ref();
+                let data = &self._out[ptr..ptr + len];
 
                 // Moving the pointer forward without overflowing.
-                if self.read_ptr.saturating_add(len) > OUTPUT_BUFFER_SIZE {
-                    self.read_ptr = 0;
-                };
+                self.read_ptr = (self.read_ptr + len) % OUTPUT_BUFFER_SIZE;
 
                 Ok(data)
-            }                             // Returning the amount of bytes read.
-            Err(err) => Err(match err {
-                HidApiErrorEmpty => BufferError::NoData,
-                c @ _ => BufferError::HidAPI(c),            // Either impossible to parse at this
-                                                            // level or unsolvable.
-            }),
+            }
+            Err(err) => Err(BufferError::RusbError(err)),
         }
     }
 
-    fn write(&mut self, dev: &HidDevice) -> Result<usize, BufferError> {
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, BufferError> {
         let ptr = self.write_ptr;
-        let offset = self._in[ptr];
+        let offset = self._in[ptr] as usize;
 
-        self._write(dev, ptr, offset as usize)
+        self._write(dev, ptr, offset)
     }
 }
 
 impl USBV2Buf {
-    fn _write(&mut self, dev: &HidDevice, ptr: usize, offset: usize) -> Result<usize, BufferError> {
-        use HidError::*;
-        let slice = self._in[ptr .. ptr + offset].as_ref();
+    fn _write(
+        &mut self,
+        dev: &DeviceHandle<rusb::Context>,
+        ptr: usize,
+        offset: usize,
+    ) -> Result<usize, BufferError> {
+        let slice = &self._in[ptr + 1..ptr + 1 + offset];
 
         // Writing the slice in.
-        match dev.write(slice) {
+        match dev.write_bulk(1, slice, TIMEOUT) {
             Ok(len) => {
                 // Moving the pointer forward without overflowing.
-                if self.write_ptr.saturating_add(len) > INPUT_BUFFER_SIZE {
-                    self.write_ptr = 0;
-                }; 
+                self.write_ptr = (self.write_ptr + len) % INPUT_BUFFER_SIZE;
 
                 Ok(len)
-            },
-            Err(err) => Err(match err {
-                HidApiErrorEmpty => BufferError::NoData,
-                InvalidZeroSizeData => BufferError::BadInput,   // Unable to write a ZST.
-                // If a whole command was not sent, sending the rest.
-                IncompleteSendError { sent, all } => return self._write(dev, ptr + sent, all - sent),
-                c @ _ => BufferError::HidAPI(c),                // Either impossible to parse at this
-                                                                // level or unsolvable.
-            }),
+            }
+            Err(err) => Err(BufferError::RusbError(err)),
         }
     }
 }
@@ -107,7 +94,7 @@ impl USBV2Buf {
 #[derive(Debug)]
 pub enum BufferError {
     NoData,
-    BadInput,
-    HidAPI(HidError),
+    BadData,
+    RusbError(RusbError),
 }
 

@@ -7,8 +7,9 @@ use std::sync::Arc;
 use std::any::Any;
 use std::thread;
 
+use log::Level;
 use tokio::sync::{Mutex, mpsc::{self, Sender}};
-use hidapi::{BusType, HidApi, HidDevice, HidError};
+use rusb::{Context, UsbContext, DeviceHandle};
 
 use crate::sugar::conn::buf::BufferError;
 use crate::sugar::parse::SugarParser;
@@ -19,7 +20,7 @@ use super::{
 
 pub type BridgeResult<T> = Result<T, BridgeError>;
 type DataBuffer = Arc<Mutex<Box<dyn Buffer>>>;
-type Device = Arc<Mutex<HidDevice>>;
+type Device = Arc<Mutex<DeviceHandle<rusb::Context>>>;
 type Tx = Option<Sender<DaemonCommand>>;
 
 const CHANNEL_BUFFER_SIZE: usize = 1024;
@@ -35,6 +36,10 @@ pub enum BridgeError {
     ConnectionTimeout,
     /// Unable to send any data to the bridge since it is closed.
     BridgeClosed,
+    /// Unable to setup a new libusb context
+    ContextError,
+    /// Unable to read a usb device by a file descriptor.
+    FileDescriptorError
 }
 
 /// A custom structure that is being created on each communication between target devices.
@@ -54,50 +59,50 @@ impl Bridge {
     /// Initializes the bridge and finds a proper device, which is connected to the USB port.
     ///
     /// This method will return a new bridge, which is not yet connected, but ready to do so. If
-    /// not USB devices are available the result will be Ok(None).
+    /// not USB devices are available the result will be Ok(None). The file descriptor must be
+    /// provided from the Java interface, because only Java android code has permissions to obtain
+    /// the device.
     ///
     /// # Warn
     ///
     /// This method does not connect to the target right away, but only obtains all required
     /// information for a proper communication.
-    pub fn new(id: usize) -> Result<Option<Self>, HidError> {
+    pub fn new(id: usize, fd: i32) -> BridgeResult<Self> {
         log::info!("Creating a new communication bridge");
-        let api = HidApi::new_without_enumerate()?;
-        // Only one device is logical in our case, because the host is a mobile device.
-        if let Some(dev_info) = api.device_list()
-                .into_iter()
-                .map(|d| { log::info!("dev: {:#?}", d); d })
-                .find(|d| d.bus_type().type_id() == BusType::Usb.type_id()) // Finding the first USB connected device.
-        {
-            let dev = dev_info.open_device(&api)?;  // Initializing the HIDAPI.
+        // Creating a new libusb context.
+        let mut context = Context::new().map_err(|err| {
+            log::error!("Bridge error: {}", err);
+            BridgeError::ContextError
+        })?;
 
-            #[cfg(debug_assertions)]
-            if let Ok(dev_i) = dev.get_device_info() {
-                let vid = dev_i.vendor_id();
-                let pid = dev_i.product_id();
-                let int = dev_i.interface_number();
+        #[cfg(debug_assertions)]
+        context.set_log_level(rusb::LogLevel::Debug);
 
-                let dev_m = dev.get_manufacturer_string()
-                    .unwrap_or_else(|e| Some(e.to_string())).unwrap();
-                let dev_s = dev.get_serial_number_string()
-                    .unwrap_or_else(|e| Some(e.to_string())).unwrap();
+        // Trying to obtain a device handle from the provided file descriptor.
+        let devh = unsafe { context.open_device_with_fd(fd).map_err(|err| { 
+            log::error!("Bridge error: {}", err);
+            BridgeError::FileDescriptorError 
+        })}?;
 
-                log::info!("Obtained a possible candidate for connection:\n
-                    VID: {}; PID: {};\n
-                    Interface number: {}\n
-                    Manufacturer: {}\n
-                    Serial number: {}.",
-                    vid, pid, int, dev_m, dev_s);
-            }
+        let devd = devh.device();
+        let devdc = devd.device_descriptor().map_err(|err| { 
+            log::error!("Bridge error: {}", err);
+            BridgeError::FileDescriptorError
+        })?;
 
+        log::debug!("Found device: Bus: {:03}, Addr: {:03}, ID: {:04x}:{:04x}\n
+            Max supported USB version: {},", 
+            devd.bus_number(), devd.address(), devdc.vendor_id(), devdc.product_id(), devdc.usb_version());
 
-            return Ok(Some(Self::new_v2(dev, id)))
-        }
+        let handle_arc = Arc::new(Mutex::new(devh));
 
-        log::info!("No devices connected to the port.");
-        Ok(None)
-    } 
-    
+        return Ok(Self {
+            _id: id,
+            tx: None,
+            buf: Arc::new(Mutex::new(Box::new(USBV2Buf::default()))),
+            device: handle_arc,
+        });
+    }
     /// Connects the existing bridge to start the communication.
     ///
     /// While connected, listens to any upcoming data from the target machine as well as from the
@@ -108,34 +113,29 @@ impl Bridge {
         let (tx, mut rx) = mpsc::channel::<DaemonCommand>(CHANNEL_BUFFER_SIZE);
         log::info!("Available threads: {}", cpus);
 
-        // Checks for the upcoming stream from the target device.
         for i in 0..cpus.into() {
             log::info!("Spawning listener thread: {}", i);
             let buf_lock = self.buf.clone();
-            let dev_lock = self.device.clone();
+            let device_lock = self.device.clone();
             let tx = tx.clone();
 
-            // Spawning 
             tokio::spawn(async move {
                 loop {
-                    // Obtaining the locks.
                     let mut buffer = buf_lock.lock().await;
-                    let dev = dev_lock.lock().await;
+                    let mut device = device_lock.lock().await;
 
-                    // If new data exist, reading it.
-                    match buffer.read(&dev) {
+                    match buffer.read(&mut *device) {
                         Ok(bytes) => {
                             log::info!("Thread ({}): Obtained oncoming data: {}", i, bytes.escape_ascii());
-                            // Sending the command for parsing.
                             if let Err(tx_err) = tx.send(DaemonCommand::new(bytes)).await {
                                 log::error!("Thread ({}): Unable to send data: {}, channel is closed, aborting...", i, tx_err);
-                                break; // Breaking out of the loop awaits the data.
+                                break;
                             }
                         },
                         Err(buf_err) => {
                             match buf_err {
                                 BufferError::NoData => continue,
-                                _ => log::error!("Thread ({}): Error while reading the data from the USB bus: {:#?}", i, buf_err), 
+                                _ => log::error!("Thread ({}): Error while reading the data from the USB bus: {:#?}", i, buf_err),
                             }
                         },
                     };
@@ -171,44 +171,35 @@ impl Bridge {
             Ok(())
         } else { Err(BridgeError::BridgeNotReady) }
     }
-
-    /// Creates a new bridge connection via usb v2.0 cable. 
-    fn new_v2(dev: HidDevice, id: usize) -> Self {
-        Self {
-            _id: id,
-            tx: None,
-            buf: Arc::new(Mutex::new(Box::new(USBV2Buf::default()))),
-            device: Arc::new(Mutex::new(dev)),
-        }
-    }
 }
 
 pub mod service {
-    use hidapi::HidError;
-
     use super::{Bridge, BridgeError};
 
     #[tokio::main]
-    pub async fn connect() -> ConnectionStatus {
+    pub async fn connect(fd: i32) -> ConnectionStatus {
         let id = rand::random();
 
-        match Bridge::new(id) {
-            Ok(op) => match op {
-                Some(mut bridge) => {
-                    if let Err(err) = bridge.connect().await {
-                        match err {
-                            BridgeError::BridgeClosed => ConnectionStatus::BridgeClosed,
-                            BridgeError::ConnectionRefused => ConnectionStatus::Refused,
-                            BridgeError::ConnectionTimeout => ConnectionStatus::Timeout,
-                            _ => unreachable!()
-                        }
-                    } else {
-                        ConnectionStatus::Connected
+        match Bridge::new(id, fd) {
+            Ok(mut bridge) => {
+                if let Err(_err) = bridge.connect().await {
+                    match _err {
+                        BridgeError::BridgeClosed => ConnectionStatus::BridgeClosed,
+                        BridgeError::ConnectionRefused => ConnectionStatus::Refused,
+                        BridgeError::ConnectionTimeout => ConnectionStatus::Timeout,
+                        BridgeError::FileDescriptorError => ConnectionStatus::WrongData,
+                        BridgeError::ContextError => ConnectionStatus::InnerError,
+                        _ => unreachable!(),
                     }
-                },
-                None => ConnectionStatus::NoDevice,
+                } else {
+                    ConnectionStatus::Connected
+                }
             },
-            Err(_err) => todo!(),
+            Err(_err) => match _err {
+                BridgeError::FileDescriptorError => ConnectionStatus::WrongData,
+                BridgeError::ContextError => ConnectionStatus::InnerError,
+                _ => unreachable!(),
+            } 
         }
     }
 
@@ -225,5 +216,7 @@ pub mod service {
         BridgeClosed        = 3, 
         Refused             = 4,  
         Timeout             = 5, 
+        WrongData           = 6,
+        InnerError          = 7,
     }
 }

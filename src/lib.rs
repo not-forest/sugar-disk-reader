@@ -91,7 +91,7 @@ pub mod android {
                 .with_tag("RUST_BACKEND")                               
                 .with_filter(                                           // configure messages for specific crate
                     FilterBuilder::new()
-                        .parse("debug,hello::crate=error")
+                        .parse("debug,hello::crate=error,rusb=debug,tokio=info")
                         .build()
                 )
         );
@@ -213,7 +213,7 @@ pub mod android {
         mut env: JNIEnv,
         _: JClass,
         file_desc: i32,
-    ) ->u8 {
+    ) -> u8 {
         log::info!("Begin: connect");
 
         connect(file_desc) as u8

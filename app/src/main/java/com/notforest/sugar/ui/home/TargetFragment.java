@@ -13,8 +13,10 @@
 package com.notforest.sugar.ui.home;
 
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -59,14 +61,10 @@ public class TargetFragment extends Fragment {
     }
 
     // Native JNI interface for Rust backend.
-    /* Tries to connect to the target device by starting the new bridge. */
     private static native int connect(int fd);
-    /* Tries to disconnect from the target device by sending a shutdown command. */
     private static native int disconnect();
-    /* Tries to obtain the current connection info as a string, from Rust. */
     private static native String conn_info();
 
-    // Define the permission intent action
     private static final String ACTION_USB_PERMISSION = "com.notforest.sugar.USB_PERMISSION";
 
     private View root;
@@ -86,6 +84,36 @@ public class TargetFragment extends Fragment {
     private static final String SHARED_PREFS_NAME = "MessageBuffer";
     private UsbManager usbManager;
 
+    private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            UsbDeviceConnection usbDeviceConnection = usbManager.openDevice(device);
+                            int fileDescriptor = usbDeviceConnection.getFileDescriptor();
+                            switch (connect(fileDescriptor)) {
+                                case 0:
+                                    POWER = true;
+                                    sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), false).apply();
+                                    displayMessage("info:" + getString(R.string.connected_to_device) + conn_info());
+                                    break;
+                                default:
+                                    displayMessage("error: " + getString(R.string.error_unknown_error));
+                            }
+                        }
+                    } else {
+                        Log.d("USB Permission", "Permission denied for device " + device);
+                        displayMessage("error: " + getString(R.string.error_usb_permission_denied));
+                    }
+                }
+            }
+        }
+    };
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -102,12 +130,6 @@ public class TargetFragment extends Fragment {
 
         MainActivity mainActivity = (MainActivity) getActivity();
         usbManager = (UsbManager) mainActivity.getSystemService(Context.USB_SERVICE);
-        Intent intent = mainActivity.getIntent();
-
-        if (usbManager == null)
-        {
-            Log.e("UsbPermissions", "No device manager found!");
-        }
 
         PendingIntent permissionIntent = PendingIntent.getBroadcast(requireContext(), 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
         HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
@@ -127,7 +149,6 @@ public class TargetFragment extends Fragment {
         if (POWER) {
             if (buttonBackground instanceof LayerDrawable) {
                 LayerDrawable layers = (LayerDrawable) buttonBackground;
-                // Assuming the second layer is at index 1
                 Drawable secondLayer = layers.getDrawable(1);
                 if (secondLayer != null) {
                     secondLayer.setTint(ContextCompat.getColor(requireContext(), R.color.main_triadic));
@@ -177,25 +198,24 @@ public class TargetFragment extends Fragment {
             } else {
                 if (!POWER) {
                     displayMessage(getString(R.string.connecting_to_device) + chosenDevice.getDeviceName());
+                }
+                if (usbManager.hasPermission(chosenDevice)) {
                     UsbDeviceConnection usbDeviceConnection = usbManager.openDevice(chosenDevice);
                     int fileDescriptor = usbDeviceConnection.getFileDescriptor();
                     switch (connect(fileDescriptor)) {
                         case 0:
-                            POWER = true;
-                            sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), false).apply();
-                            displayMessage("info:" + getString(R.string.connected_to_device) + conn_info());
+                            POWER = !POWER;
+                            sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), POWER).apply();
+                            displayMessage("info: " + getString(R.string.connected_to_device) + conn_info());
+                            break;
                         default:
                             displayMessage("error: " + getString(R.string.error_unknown_error));
                     }
                 } else {
-                    switch (disconnect()) {
-                        default:
-                            displayMessage("error: " + getString(R.string.error_unknown_error));
-                    }
+                    displayMessage("error: " + getString(R.string.error_usb_permission_denied));
                 }
             }
         });
-
 
         return root;
     }
@@ -203,7 +223,7 @@ public class TargetFragment extends Fragment {
     private void loadMessageBuffer() {
         // Load message buffer from SharedPreferences
         for (int i = 0; i < 100; i++) {
-            String message = sharedPreferences.getString( machineNameTextView.getText() + "message_" + i, null);
+            String message = sharedPreferences.getString(machineNameTextView.getText() + "message_" + i, null);
             if (message != null) {
                 messageBuffer.add(message);
             }
@@ -240,7 +260,6 @@ public class TargetFragment extends Fragment {
         displayMessageBuffer();
     }
 
-    // Parsing user commands.
     private void parseCommand(String command) {
         switch (command) {
             case "clear":
@@ -257,3 +276,5 @@ public class TargetFragment extends Fragment {
         }
     }
 }
+
+

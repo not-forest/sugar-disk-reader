@@ -12,14 +12,14 @@ const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(2000);
 /// Custom trait for buffers.
 pub(crate) trait Buffer: Send + Sync + 'static {
     /// Reads data from the bus and returns read bytes.
-    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], BufferError>;
+    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], RusbError>;
     /// Writes data to the bus and returns the amount of bytes written.
-    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, BufferError>;
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, RusbError>;
 }
 
 /// Buffer for USB v2.0.
 ///
-/// Communication is done in half duplex, where writes are less common than reads. All
+/// Communication is done in full duplex, where writes are less common than reads. All
 /// I/O is done via libusb protocol.
 #[derive(Debug)]
 pub(crate) struct USBV2Buf {
@@ -41,7 +41,7 @@ impl Default for USBV2Buf {
 }
 
 impl Buffer for USBV2Buf {
-    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], BufferError> {
+    fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], RusbError> {
         let ptr = self.read_ptr;
         let slice = &mut self._out[ptr..];
 
@@ -56,11 +56,11 @@ impl Buffer for USBV2Buf {
 
                 Ok(data)
             }
-            Err(err) => Err(BufferError::RusbError(err)),
+            Err(err) => Err(err),
         }
     }
 
-    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, BufferError> {
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, RusbError> {
         let ptr = self.write_ptr;
         let offset = self._in[ptr] as usize;
 
@@ -74,7 +74,7 @@ impl USBV2Buf {
         dev: &DeviceHandle<rusb::Context>,
         ptr: usize,
         offset: usize,
-    ) -> Result<usize, BufferError> {
+    ) -> Result<usize, RusbError> {
         let slice = &self._in[ptr + 1..ptr + 1 + offset];
 
         // Writing the slice in.
@@ -85,16 +85,8 @@ impl USBV2Buf {
 
                 Ok(len)
             }
-            Err(err) => Err(BufferError::RusbError(err)),
+            Err(err) => Err(err),
         }
     }
-}
-
-/// Parsed error that can be obtained while doing operations on buffer.
-#[derive(Debug)]
-pub enum BufferError {
-    NoData,
-    BadData,
-    RusbError(RusbError),
 }
 

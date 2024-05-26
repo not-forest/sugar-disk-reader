@@ -4,14 +4,12 @@
 //! handling all commands that are coming from the target device and from the mobile device. 
 
 use std::sync::Arc;
-use std::any::Any;
 use std::thread;
 
 use log::Level;
 use tokio::sync::{Mutex, mpsc::{self, Sender}};
 use rusb::{Context, UsbContext, DeviceHandle};
 
-use crate::sugar::conn::buf::BufferError;
 use crate::sugar::parse::SugarParser;
 use super::{
     buf::{Buffer, USBV2Buf},
@@ -26,6 +24,7 @@ type Tx = Option<Sender<DaemonCommand>>;
 const CHANNEL_BUFFER_SIZE: usize = 1024;
 
 /// Custom error type for bridge communication.
+#[derive(Debug)]
 pub enum BridgeError {
     /// Appears when trying to close a bridge, which is yet not initialized fully.
     BridgeNotReady,
@@ -69,24 +68,28 @@ impl Bridge {
     /// information for a proper communication.
     pub fn new(id: usize, fd: i32) -> BridgeResult<Self> {
         log::info!("Creating a new communication bridge");
+        #[cfg(debug_assertions)]
+        rusb::disable_device_discovery().map_err(|err| {
+            log::error!("Bridge error: Unable to disable device discovery: {}", err);
+            BridgeError::ContextError
+        })?;    // This is required since we already have a file desriptor.
+
         // Creating a new libusb context.
         let mut context = Context::new().map_err(|err| {
-            log::error!("Bridge error: {}", err);
+            log::error!("Bridge error: Unable to create a new context: {}", err);
             BridgeError::ContextError
-        })?;
+        })?;    // Clear libusb context.
 
-        #[cfg(debug_assertions)]
         context.set_log_level(rusb::LogLevel::Debug);
-
         // Trying to obtain a device handle from the provided file descriptor.
         let devh = unsafe { context.open_device_with_fd(fd).map_err(|err| { 
-            log::error!("Bridge error: {}", err);
+            log::error!("Bridge error: Unable to open a device with provided file descriptor: {}", err);
             BridgeError::FileDescriptorError 
         })}?;
 
         let devd = devh.device();
         let devdc = devd.device_descriptor().map_err(|err| { 
-            log::error!("Bridge error: {}", err);
+            log::error!("Bridge error: Unable to obtain the device descriptor: {}", err);
             BridgeError::FileDescriptorError
         })?;
 
@@ -134,7 +137,7 @@ impl Bridge {
                         },
                         Err(buf_err) => {
                             match buf_err {
-                                BufferError::NoData => continue,
+                                rusb::Error::InvalidParam => continue,
                                 _ => log::error!("Thread ({}): Error while reading the data from the USB bus: {:#?}", i, buf_err),
                             }
                         },
@@ -189,7 +192,10 @@ pub mod service {
                         BridgeError::ConnectionTimeout => ConnectionStatus::Timeout,
                         BridgeError::FileDescriptorError => ConnectionStatus::WrongData,
                         BridgeError::ContextError => ConnectionStatus::InnerError,
-                        _ => unreachable!(),
+                        e @ _ => {
+                            log::error!("Unhandled error has occur: {:#?}", e);
+                            unreachable!()
+                        },
                     }
                 } else {
                     ConnectionStatus::Connected
@@ -198,7 +204,10 @@ pub mod service {
             Err(_err) => match _err {
                 BridgeError::FileDescriptorError => ConnectionStatus::WrongData,
                 BridgeError::ContextError => ConnectionStatus::InnerError,
-                _ => unreachable!(),
+                e @ _ => {
+                    log::error!("Unhandled error has occur: {:#?}", e);
+                    unreachable!()
+                },
             } 
         }
     }

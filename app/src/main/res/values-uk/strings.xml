@@ -56,4 +56,13 @@
     <string name="language">Мова</string>
     <string name="machine_notes">Примітки до пристрою (необов\'язково)</string>
     <string name="add">Додати</string>
+
+    <string name="error_unknown_command_1">Невідома команда: "</string>
+    <string name="error_unknown_command_2">". Будь ласка, введіть "допомога", щоб переглянути список доступних команд.</string>
+    <string name="error_unknown_error">Виникла невідома помилка.</string>
+    <string name="error_device_null">Немає пристрою на шині USB. Будь ласка, підключіть пристрій спочатку.</string>
+    <string name="error_usb_permission_denied">Відмовлено в доступі до USB.</string>
+
+    <string name="connecting_to_device">Підключення…</string>
+    <string name="connected_to_device">Підключено до пристрою: </string>
 </resources>

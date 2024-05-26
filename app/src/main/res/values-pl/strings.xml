@@ -56,4 +56,14 @@
     <string name="language">Język</string>
     <string name="machine_notes">Notatki dotyczące urządzenia (Opcjonalnie)</string>
     <string name="add">Dodaj</string>
+
+    <string name="error_unknown_command_1">Nieznane polecenie: "</string>
+    <string name="error_unknown_command_2">". Proszę wpisz „pomoc” w celu uzyskania listy dostępnych poleceń.</string>
+    <string name="error_unknown_error">Wystąpił nieznany błąd.</string>
+    <string name="error_device_null">Brak urządzenia podłączonego do magistrali USB. Proszę podłączyć urządzenie najpierw.</string>
+    <string name="error_usb_permission_denied">Odmowa uprawnień USB.</string>
+
+    <string name="connecting_to_device">Łączenie…</string>
+    <string name="connected_to_device">Połączono z urządzeniem: </string>
+
 </resources>

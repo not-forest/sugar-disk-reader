@@ -5,8 +5,6 @@
 
 use std::sync::Arc;
 use std::thread;
-
-use log::Level;
 use tokio::sync::{Mutex, mpsc::{self, Sender}};
 use rusb::{Context, UsbContext, DeviceHandle};
 
@@ -50,8 +48,8 @@ pub struct Bridge {
     _id: usize,
     tx: Tx,
 
-    buf: DataBuffer,
-    device: Device,
+    pub buf: DataBuffer,
+    pub device: Device,
 }
 
 impl Bridge {
@@ -151,10 +149,17 @@ impl Bridge {
         // the channel yet.
         tx.send(DaemonCommand::init(self._id)).await.ok();
         self.tx.replace(tx); // after this replacement, it is possible to disconnect.
+        let mut cmds = 0;
 
         // All obtained bytes are then parsed and sent to the front-end or to the target device.
         while let Some(bytes) = rx.recv().await {
-            SugarParser::parse_byte_code(self, bytes);
+            use crate::sugar::parse::ParseOutput;
+            match SugarParser::parse_byte_code(self, bytes).await {
+                ParseOutput::Success => { log::info!("Successfully parsed request number: {}", cmds); cmds += 1; },
+                ParseOutput::Empty => log::warn!("Obtained empty command. Ignoring..."),
+                ParseOutput::Checksum => log::error!("Obtained message has a wrong checksum. Sending a retry request."),
+                ParseOutput::UnparsableTokens => log::error!("Obtained unparsable command. Please check the connection."),
+            }
         }
 
         log::info!("Bridge is closed.");

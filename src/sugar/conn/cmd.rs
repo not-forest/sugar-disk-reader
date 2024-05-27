@@ -19,12 +19,18 @@ use std::mem;
 /// Some fields like a prefix and data can be optional. Commands are parsed sequentially, therefore
 /// they can be stacked.
 #[repr(transparent)]
+#[derive(Debug, Clone)]
 pub struct DaemonCommand(Vec<DaemonCommandByte>);
 
 impl DaemonCommand {
     /// Creates a new daemon command based on the obtained slice of bytes. 
     pub fn new(slice: &[u8]) -> Self {
         Self(unsafe{ mem::transmute(slice.to_vec()) })
+    }
+
+    /// Creates a new blank command for future dynamic structuring.
+    pub fn blank() -> Self {
+        Self(Vec::new())
     }
     
     /// Pushes new data before the checksum while counting the new one.
@@ -34,10 +40,20 @@ impl DaemonCommand {
         let mut checksum = u8::MAX - Into::<u8>::into(self.0.pop().unwrap());  // Commands would never be empty.
         for byte in data.to_owned() {
             let _ = checksum.wrapping_add(byte);
-            self.0.push(byte.into());
+            self.push_value(byte)
         }
         checksum = u8::MAX - checksum;
-        self.0.push(checksum.into());
+        self.push_value(checksum.into());
+    }
+
+    /// Pushes one byte to the commands top. Does not change the checksum.
+    pub fn push_value(&mut self, value: u8) {
+        self.0.push(value.into());
+    }
+
+    /// Returns the size of a command. Panics if the command is empty
+    pub fn size(&self) -> usize {
+        *self.0.first().unwrap() as usize
     }
 
     /// Returns the slice of byte code written in the command.
@@ -51,6 +67,12 @@ impl DaemonCommand {
         let mut cmd = crate::dcommand!(REQ, CONN, BID);
         cmd.push_data(&id.to_ne_bytes());
         cmd
+    }
+
+    /// Asks to retry the command under a specific number.
+    pub fn retry() -> Self {
+        use DaemonCommandByte::*;
+        crate::dcommand!(REQ, RET)
     }
 
     /// This command is being sent only by user from the front-end side.
@@ -126,6 +148,8 @@ pub enum DaemonCommandByte {
     UNSEL = 0x06,
     /// Reads files. The following data might vary.
     READ =  0x07,
+    /// Retry operation.
+    RET =   0x08,
 
     // Data parse prefix
 

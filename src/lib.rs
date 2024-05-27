@@ -34,6 +34,7 @@ pub mod sugar {
         pub mod cmd;
         mod buf;
 
+        pub(crate) use buf::Buffer;
         pub use bridge::Bridge;
         pub use bridge::service;
     }

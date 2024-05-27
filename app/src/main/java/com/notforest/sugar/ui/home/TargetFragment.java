@@ -35,10 +35,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -82,6 +84,7 @@ public class TargetFragment extends Fragment {
     private Drawable buttonBackground;
     private boolean POWER;
     private static final String SHARED_PREFS_NAME = "MessageBuffer";
+    private HashMap<String, UsbDevice> deviceList;
     private UsbManager usbManager;
 
     private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
@@ -132,7 +135,7 @@ public class TargetFragment extends Fragment {
         usbManager = (UsbManager) mainActivity.getSystemService(Context.USB_SERVICE);
 
         PendingIntent permissionIntent = PendingIntent.getBroadcast(requireContext(), 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
-        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        deviceList = usbManager.getDeviceList();
         for (UsbDevice usbDevice : deviceList.values()) {
             usbManager.requestPermission(usbDevice, permissionIntent);
         }
@@ -192,32 +195,41 @@ public class TargetFragment extends Fragment {
             Log.d("POWER", POWER ? "ON" : "OFF");
             UsbDevice chosenDevice = deviceList.isEmpty() ? null : deviceList.values().iterator().next();
 
-            if (chosenDevice == null) {
-                displayMessage("error: " + getString(R.string.error_device_null));
-                return;
+            for (UsbDevice usbDevice : deviceList.values()) {
+                usbManager.requestPermission(usbDevice, permissionIntent);
+            }
+
+            try_connect(chosenDevice);
+        });
+
+        ViewFlipper viewFlipper = root.findViewById(R.id.view_flipper);
+        Button toggleViewButton = root.findViewById(R.id.bookmark_button);
+        TextView headerTextView = root.findViewById(R.id.terminal_title);
+
+        toggleViewButton.setOnClickListener(v -> {
+            viewFlipper.showNext();
+            // Update the text of the header based on the current view
+            if (viewFlipper.getDisplayedChild() == 0) {
+                headerTextView.setText(getString(R.string.terminal));
             } else {
-                if (!POWER) {
-                    displayMessage(getString(R.string.connecting_to_device) + chosenDevice.getDeviceName());
-                }
-                if (usbManager.hasPermission(chosenDevice)) {
-                    UsbDeviceConnection usbDeviceConnection = usbManager.openDevice(chosenDevice);
-                    int fileDescriptor = usbDeviceConnection.getFileDescriptor();
-                    switch (connect(fileDescriptor)) {
-                        case 0:
-                            POWER = !POWER;
-                            sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), POWER).apply();
-                            displayMessage("info: " + getString(R.string.connected_to_device) + conn_info());
-                            break;
-                        default:
-                            displayMessage("error: " + getString(R.string.error_unknown_error));
-                    }
-                } else {
-                    displayMessage("error: " + getString(R.string.error_usb_permission_denied));
-                }
+                headerTextView.setText(getString(R.string.storage));
             }
         });
 
         return root;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        requireActivity().registerReceiver(usbPermissionReceiver, filter);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        requireActivity().unregisterReceiver(usbPermissionReceiver);
     }
 
     private void loadMessageBuffer() {
@@ -260,8 +272,66 @@ public class TargetFragment extends Fragment {
         displayMessageBuffer();
     }
 
+    private void try_connect(final UsbDevice chosenDevice) {
+        if (chosenDevice == null) {
+            displayMessage("error: " + getString(R.string.error_device_null));
+        } else {
+            Thread connectThread = new Thread(() -> {
+                if (usbManager.hasPermission(chosenDevice)) {
+                    UsbDeviceConnection usbDeviceConnection = usbManager.openDevice(chosenDevice);
+                    int fileDescriptor = usbDeviceConnection.getFileDescriptor();
+                    if (!POWER) {
+                        displayMessage(getString(R.string.connecting_to_device) + chosenDevice.getDeviceName());
+                        switch (connect(fileDescriptor)) {
+                            case 0:
+                                POWER = !POWER;
+                                sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), POWER).apply();
+                                displayMessage("info: " + getString(R.string.connected_to_device) + conn_info());
+                                break;
+                            default:
+                                displayMessage("error: " + getString(R.string.error_unknown_error));
+                        }
+                    } else {
+                        switch (disconnect()) {
+                            case 0:
+                                POWER = !POWER;
+                                sharedPreferences.edit().putBoolean("power_" + machineNameTextView.getText(), POWER).apply();
+                                break;
+                            default:
+                                displayMessage("error: " + getString(R.string.error_unknown_error));
+                        }
+                    }
+                } else {
+                    displayMessage("error: " + getString(R.string.error_usb_permission_denied));
+                }
+            });
+
+            connectThread.start();
+        }
+    }
+
+
+    /* Parses all commands from the user's side. */
     private void parseCommand(String command) {
         switch (command) {
+            case "connect":
+                if (!POWER) {
+                    UsbDevice chosenDevice = deviceList.isEmpty() ? null : deviceList.values().iterator().next();
+                    try_connect(chosenDevice);
+                } else {
+                    displayMessage("error: " + getString(R.string.error_device_connected));
+                }
+            case "disconnect":
+                if (POWER) {
+                    UsbDevice chosenDevice = deviceList.isEmpty() ? null : deviceList.values().iterator().next();
+                    try_connect(chosenDevice);
+                } else {
+                    displayMessage("error: " + getString(R.string.error_device_not_connected));
+                }
+                break;
+            case "help":
+                displayMessage("info: " + getString(R.string.cmd_help_info));
+                break;
             case "clear":
                 messageBuffer.clear();
                 SharedPreferences.Editor editor = sharedPreferences.edit();

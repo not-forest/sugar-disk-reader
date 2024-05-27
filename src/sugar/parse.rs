@@ -1,6 +1,6 @@
 //! Custom module for parsing daemon-mobile communication byte code.
 
-use super::conn::{cmd::{DaemonCommand, DaemonCommandByte}, Bridge};
+use super::conn::{cmd::{DaemonCommand, DaemonCommandByte}, Bridge, Buffer};
 
 /// Struct which handles all parsing activity related to user input and data.
 ///
@@ -11,28 +11,31 @@ pub struct SugarParser;
 impl SugarParser {
     /// Parses the daemon byte communication code and based on the result, calls different
     /// functions and changes the state of the communication bridge.
-    pub fn parse_byte_code(bridge: &mut Bridge, command: DaemonCommand) -> ParseOutput {
+    pub async fn parse_byte_code(bridge: &mut Bridge, command: DaemonCommand) -> ParseOutput {
         use DaemonCommandByte::*;
+
+        let mut res = DaemonCommand::blank();
+
         let mut cmd_iter = command.byte_code().to_owned().into_iter(); // Creating an iterator of each byte.
-        let mut size: u8 = 0;
-        let mut count: u8 = 0;
-        let mut prev_byte = None;
+        let mut _size: u8 = 0;
+        let mut _count: u8 = 0;
+        let mut _prev_byte = None;
 
         loop {
             match cmd_iter.next() {
                 Some(byte) => {
-                    let _ = count.wrapping_add(byte.into()); 
+                    let _ = _count.wrapping_add(byte.into()); 
 
                     // Parsing the byte itself.
                     match byte {
                         prefix @ (REQ | ACK | NACK) => {
-                            prev_byte.replace(prefix);
+                            _prev_byte.replace(prefix);
                         },
                         data @ _ => {
                             // The first byte is always the size.
-                            if prev_byte.is_none() {
-                                size = data.into();
-                                prev_byte.replace(DaemonCommandByte::SIZE);    
+                            if _prev_byte.is_none() {
+                                _size = data.into();
+                                _prev_byte.replace(DaemonCommandByte::SIZE);    
                             }
 
                             break; // Breaking out of the loop, because we cannot parse the code
@@ -41,11 +44,25 @@ impl SugarParser {
                     }
                 },
                 // The parsing shall succeed only if the commands checksum is zero.
-                None => return if count == 0 { 
-                    if prev_byte.is_some() {
-                        ParseOutput::Success
-                    } else { ParseOutput::Empty }
-                } else { ParseOutput::Checksum },
+                None => {
+                    let mut buffer = bridge.buf.lock().await;
+                    let device = bridge.device.lock().await;                
+                    let (response, output) = if _count == 0 { 
+                        if _prev_byte.is_some() {
+                            (res, ParseOutput::Success)
+                        } else {
+                            (DaemonCommand::retry(), ParseOutput::Empty) 
+                        }
+                    } else {  
+                        (DaemonCommand::retry(), ParseOutput::Empty)
+                    };
+
+                    while let Err(err) = buffer.write(&device, response.clone()) { 
+                        log::error!("Unable to write data to the target device: {}", err); 
+                    }
+
+                    return output
+                },
             }
         }
 

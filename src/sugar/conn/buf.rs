@@ -1,5 +1,10 @@
 
 use rusb::{DeviceHandle, Error as RusbError};
+use std::io::Write;
+use std::ptr::write_bytes;
+use std::mem;
+
+use super::cmd::DaemonCommand;
 
 /// Amount of bytes that will be held for user's commands input.
 const INPUT_BUFFER_SIZE: usize = 128;
@@ -14,7 +19,7 @@ pub(crate) trait Buffer: Send + Sync + 'static {
     /// Reads data from the bus and returns read bytes.
     fn read(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<&[u8], RusbError>;
     /// Writes data to the bus and returns the amount of bytes written.
-    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, RusbError>;
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>, cmd: DaemonCommand) -> Result<usize, RusbError>;
 }
 
 /// Buffer for USB v2.0.
@@ -60,22 +65,11 @@ impl Buffer for USBV2Buf {
         }
     }
 
-    fn write(&mut self, dev: &DeviceHandle<rusb::Context>) -> Result<usize, RusbError> {
+    fn write(&mut self, dev: &DeviceHandle<rusb::Context>, cmd: DaemonCommand) -> Result<usize, RusbError> {
         let ptr = self.write_ptr;
-        let offset = self._in[ptr] as usize;
-
-        self._write(dev, ptr, offset)
-    }
-}
-
-impl USBV2Buf {
-    fn _write(
-        &mut self,
-        dev: &DeviceHandle<rusb::Context>,
-        ptr: usize,
-        offset: usize,
-    ) -> Result<usize, RusbError> {
-        let slice = &self._in[ptr + 1..ptr + 1 + offset];
+        let offset = cmd.size();
+        let mut slice = &mut self._in[ptr + 1..ptr + 1 + offset];
+        slice.write(unsafe { mem::transmute(cmd.byte_code()) });
 
         // Writing the slice in.
         match dev.write_bulk(1, slice, TIMEOUT) {

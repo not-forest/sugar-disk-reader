@@ -61,7 +61,14 @@
     <string name="error_unknown_error">"Unknown error has occured."</string>
     <string name="error_device_null">No device located on the USB bus. Please connect the device first.</string>
     <string name="error_usb_permission_denied">Usb permission denied.</string>
+    <string name="error_device_connected">The device is already connected.</string>
+    <string name="error_device_not_connected">The device is not connected.</string>
 
     <string name="connecting_to_device">Connecting…  </string>
     <string name="connected_to_device">Connected to device: </string>
+
+    <string name="cmd_help_info">List of available commands:\nhelp - shows this information;\nconnect - connects to the target device;\ndisconnect - disconnects from the target device;\nclear - clears all messages in the terminal;</string>
+    <string name="nothing_yet">Nothing yet :(</string>
+    <string name="terminal">Terminal</string>
+    <string name="storage">Storage</string>
 </resources>

@@ -66,6 +66,7 @@
 
     <string name="connecting_to_device">Connecting…  </string>
     <string name="connected_to_device">Connected to device: </string>
+    <string name="flashing_the_daemon">Flashing the daemon.</string>
 
     <string name="cmd_help_info">List of available commands:\nhelp - shows this information;\nconnect - connects to the target device;\ndisconnect - disconnects from the target device;\nclear - clears all messages in the terminal;</string>
     <string name="nothing_yet">Nothing yet :(</string>

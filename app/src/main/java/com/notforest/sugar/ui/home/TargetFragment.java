@@ -210,9 +210,9 @@ public class TargetFragment extends Fragment {
             viewFlipper.showNext();
             // Update the text of the header based on the current view
             if (viewFlipper.getDisplayedChild() == 0) {
-                headerTextView.setText(getString(R.string.terminal));
-            } else {
                 headerTextView.setText(getString(R.string.storage));
+            } else {
+                headerTextView.setText(getString(R.string.terminal));
             }
         });
 
@@ -282,6 +282,7 @@ public class TargetFragment extends Fragment {
                     int fileDescriptor = usbDeviceConnection.getFileDescriptor();
                     if (!POWER) {
                         displayMessage(getString(R.string.connecting_to_device) + chosenDevice.getDeviceName());
+                        displayMessage("info: " + getString(R.string.flashing_the_daemon));
                         switch (connect(fileDescriptor)) {
                             case 0:
                                 POWER = !POWER;
@@ -346,5 +347,4 @@ public class TargetFragment extends Fragment {
         }
     }
 }
-
 

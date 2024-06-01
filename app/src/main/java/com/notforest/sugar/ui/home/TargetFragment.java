@@ -30,7 +30,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,8 +38,8 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
@@ -47,11 +47,11 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.notforest.sugar.LoginActivity;
 import com.notforest.sugar.MainActivity;
 import com.notforest.sugar.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -86,6 +86,7 @@ public class TargetFragment extends Fragment {
     private static final String SHARED_PREFS_NAME = "MessageBuffer";
     private HashMap<String, UsbDevice> deviceList;
     private UsbManager usbManager;
+    private LinearLayout diskContentLayout;
 
     private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
         @Override
@@ -130,6 +131,7 @@ public class TargetFragment extends Fragment {
         terminalInputEditText = root.findViewById(R.id.terminal_input);
         powerButton = root.findViewById(R.id.power_button);
         buttonBackground = powerButton.getDrawable();
+        diskContentLayout = root.findViewById(R.id.disk_content);
 
         MainActivity mainActivity = (MainActivity) getActivity();
         usbManager = (UsbManager) mainActivity.getSystemService(Context.USB_SERVICE);
@@ -344,6 +346,185 @@ public class TargetFragment extends Fragment {
                 break;
             default:
                 displayMessage("error: " + getString(R.string.error_unknown_command_1) + command + getString(R.string.error_unknown_command_2));
+        }
+    }
+
+    private void populateDiskContent(List<FileStructure.Disk> disks) {
+        if (disks != null && !disks.isEmpty()) {
+            // Removing "nothing yet" view if present
+            View diskEmptyStateView = root.findViewById(R.id.disk_empty_state);
+            if (diskEmptyStateView != null) {
+                ((ViewGroup) diskEmptyStateView.getParent()).removeView(diskEmptyStateView);
+            }
+
+            // Add the disks to the layout
+            for (FileStructure.Disk disk : disks) {
+                LinearLayout diskLayout = createLinearLayoutWithIcon(disk.name, R.drawable.baseline_insert_drive_file_24, 24, 1);
+                diskContentLayout.addView(diskLayout);
+
+                LinearLayout partitionLayout = new LinearLayout(requireContext());
+                partitionLayout.setOrientation(LinearLayout.VERTICAL);
+                partitionLayout.setVisibility(View.GONE);
+                diskContentLayout.addView(partitionLayout);
+
+                diskLayout.setOnClickListener(v -> toggleVisibility(partitionLayout));
+
+                for (FileStructure.Partition partition : disk.partitions) {
+                    LinearLayout partitionView = createLinearLayoutWithIcon(partition.name, R.drawable.baseline_repartition_24, 22, 4);
+                    partitionLayout.addView(partitionView);
+
+                    LinearLayout directoryLayout = new LinearLayout(requireContext());
+                    directoryLayout.setOrientation(LinearLayout.VERTICAL);
+                    directoryLayout.setVisibility(View.GONE);
+                    partitionLayout.addView(directoryLayout);
+
+                    partitionView.setOnClickListener(v -> toggleVisibility(directoryLayout));
+
+                    for (FileStructure.Directory directory : partition.directories) {
+                        addDirectoryView(directory, directoryLayout, 20, 8);
+                    }
+                }
+            }
+        }
+    }
+
+    private void addDirectoryView(FileStructure.Directory directory, LinearLayout parentLayout, int textSize, int indentationLevel) {
+        LinearLayout directoryView = createLinearLayoutWithIcon(directory.name, R.drawable.baseline_folder_24, textSize, indentationLevel);
+        parentLayout.addView(directoryView);
+
+        LinearLayout subdirectoryLayout = new LinearLayout(requireContext());
+        subdirectoryLayout.setOrientation(LinearLayout.VERTICAL);
+        subdirectoryLayout.setVisibility(View.GONE);
+        parentLayout.addView(subdirectoryLayout);
+
+        directoryView.setOnClickListener(v -> toggleVisibility(subdirectoryLayout));
+
+        if (directory.directories != null) {
+            for (FileStructure.Directory subdirectory : directory.directories) {
+                addDirectoryView(subdirectory, subdirectoryLayout, textSize - 2, indentationLevel + 2);
+            }
+        }
+
+        if (directory.files != null) {
+            for (String file : directory.files) {
+                String fileType = getFileType(file);
+                int iconResId = getIconForFileType(fileType);
+                TextView fileView = createTextView(file, textSize - 2, indentationLevel + 1, iconResId);
+                parentLayout.addView(fileView);
+            }
+        }
+    }
+
+    private String getFileType(String filename) {
+        String[] parts = filename.split("\\.");
+        if (parts.length > 1) {
+            return parts[parts.length - 1];
+        } else {
+            return "";
+        }
+    }
+
+    private int getIconForFileType(String fileType) {
+        switch (fileType.toLowerCase()) {
+            case "mp3":
+            case "wav":
+            case "flac":
+                return R.drawable.baseline_audio_file_24;
+            case "js":
+                return R.drawable.baseline_javascript_24;
+            case "txt":
+                return R.drawable.baseline_short_text_24;
+            case "exe":
+                return R.drawable.baseline_reply_24;
+            default:
+                return R.drawable.baseline_folder_24;
+        }
+    }
+
+    private TextView createTextView(String text, int textSize, int indentationLevel, int iconResId) {
+        TextView textView = new TextView(requireContext());
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(16 * indentationLevel, 0, 0, 0);
+        textView.setLayoutParams(layoutParams);
+        textView.setText(text);
+        textView.setTextSize(textSize);
+        textView.setPadding(16, 8, 16, 8);
+
+        // Set the icon to the left of the text
+        Drawable icon = ContextCompat.getDrawable(requireContext(), iconResId);
+        if (icon != null) {
+            icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon.getIntrinsicHeight());
+            textView.setCompoundDrawables(icon, null, null, null);
+        }
+
+        return textView;
+    }
+
+
+    private LinearLayout createLinearLayoutWithIcon(String text, int iconResId, int textSize, int indentationLevel) {
+        LinearLayout linearLayout = new LinearLayout(requireContext());
+        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+        linearLayout.setPadding(16 * indentationLevel, 8, 16, 8);
+        linearLayout.setGravity(Gravity.CENTER_VERTICAL);
+
+        ImageView icon = new ImageView(requireContext());
+        icon.setImageResource(iconResId);
+        LinearLayout.LayoutParams iconLayoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        iconLayoutParams.setMarginEnd(16);
+        icon.setLayoutParams(iconLayoutParams);
+        linearLayout.addView(icon);
+
+        TextView textView = new TextView(requireContext());
+        textView.setText(text);
+        textView.setTextSize(textSize);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        linearLayout.addView(textView);
+
+        return linearLayout;
+    }
+
+    private void toggleVisibility(View view) {
+        view.setVisibility(view.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+    }
+
+}
+
+class FileStructure {
+    public static class Disk {
+        String name;
+        List<Partition> partitions;
+
+        Disk(String name, List<Partition> partitions) {
+            this.name = name;
+            this.partitions = partitions;
+        }
+    }
+
+    public static class Partition {
+        String name;
+        List<Directory> directories;
+
+        Partition(String name, List<Directory> directories) {
+            this.name = name;
+            this.directories = directories;
+        }
+    }
+
+    public static class Directory {
+        String name;
+        List<Directory> directories;
+        List<String> files;
+
+        Directory(String name, List<Directory> directories, List<String> files) {
+            this.name = name;
+            this.directories = directories != null ? directories : new ArrayList<>();
+            this.files = files != null ? files : new ArrayList<>();
         }
     }
 }

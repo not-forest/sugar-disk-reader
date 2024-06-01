@@ -14,9 +14,8 @@ impl SugarParser {
     pub async fn parse_byte_code(bridge: &mut Bridge, command: DaemonCommand) -> ParseOutput {
         use DaemonCommandByte::*;
 
-        let mut res = DaemonCommand::blank();
-
-        let mut cmd_iter = command.byte_code().to_owned().into_iter(); // Creating an iterator of each byte.
+        let res = DaemonCommand::blank();
+        let mut cmd_iter = command.byte_code().to_owned().into_iter();
         let mut _size: u8 = 0;
         let mut _count: u8 = 0;
         let mut _prev_byte = None;
@@ -24,45 +23,41 @@ impl SugarParser {
         loop {
             match cmd_iter.next() {
                 Some(byte) => {
-                    let _ = _count.wrapping_add(byte.into()); 
+                    _count = _count.wrapping_add(byte.into());
 
-                    // Parsing the byte itself.
                     match byte {
                         prefix @ (REQ | ACK | NACK) => {
                             _prev_byte.replace(prefix);
-                        },
-                        data @ _ => {
-                            // The first byte is always the size.
+                        }
+                        data => {
                             if _prev_byte.is_none() {
                                 _size = data.into();
-                                _prev_byte.replace(DaemonCommandByte::SIZE);    
+                                _prev_byte.replace(SIZE);
                             }
-
-                            break; // Breaking out of the loop, because we cannot parse the code
-                                   // that comes afterwards.
-                        } 
+                            break;
+                        }
                     }
-                },
-                // The parsing shall succeed only if the commands checksum is zero.
+                }
                 None => {
                     let mut buffer = bridge.buf.lock().await;
-                    let device = bridge.device.lock().await;                
-                    let (response, output) = if _count == 0 { 
+                    let device = bridge.device.lock().await;
+
+                    let (response, output) = if _count == 0 {
                         if _prev_byte.is_some() {
                             (res, ParseOutput::Success)
                         } else {
-                            (DaemonCommand::retry(), ParseOutput::Empty) 
+                            (DaemonCommand::retry(), ParseOutput::Empty)
                         }
-                    } else {  
+                    } else {
                         (DaemonCommand::retry(), ParseOutput::Empty)
                     };
 
-                    while let Err(err) = buffer.write(&device, response.clone()) { 
-                        log::error!("Unable to write data to the target device: {}", err); 
+                    while let Err(err) = buffer.write(&device, response.clone()) {
+                        log::error!("Unable to write data to the target device: {}", err);
                     }
 
-                    return output
-                },
+                    return output;
+                }
             }
         }
 

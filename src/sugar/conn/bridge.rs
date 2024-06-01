@@ -6,7 +6,8 @@
 use std::sync::Arc;
 use std::thread;
 use tokio::sync::{Mutex, mpsc::{self, Sender}};
-use rusb::{Context, UsbContext, DeviceHandle};
+use rusb::{Context, DeviceDescriptor, DeviceHandle, UsbContext};
+use lazy_static::lazy_static;
 
 use crate::sugar::parse::SugarParser;
 use super::{
@@ -20,6 +21,11 @@ type Device = Arc<Mutex<DeviceHandle<rusb::Context>>>;
 type Tx = Option<Sender<DaemonCommand>>;
 
 const CHANNEL_BUFFER_SIZE: usize = 1024;
+
+lazy_static! {
+    /// Static reference to a bridge connection.
+    static ref BRIDGE_REF: Arc<Mutex<Option<Bridge>>> = Arc::new(Mutex::new(None));
+}
 
 /// Custom error type for bridge communication.
 #[derive(Debug)]
@@ -50,6 +56,7 @@ pub struct Bridge {
 
     pub buf: DataBuffer,
     pub device: Device,
+    pub dev_desc: DeviceDescriptor,
 }
 
 impl Bridge {
@@ -102,6 +109,7 @@ impl Bridge {
             tx: None,
             buf: Arc::new(Mutex::new(Box::new(USBV2Buf::default()))),
             device: handle_arc,
+            dev_desc: devdc,
         });
     }
     /// Connects the existing bridge to start the communication.
@@ -148,7 +156,8 @@ impl Bridge {
         // Sending the init command right away. It must always be Ok since we havent even closed
         // the channel yet.
         tx.send(DaemonCommand::init(self._id)).await.ok();
-        self.tx.replace(tx); // after this replacement, it is possible to disconnect.
+        self.tx.replace(tx); // after this replacement, it is possible to disconnect. 
+
         let mut cmds = 0;
 
         // All obtained bytes are then parsed and sent to the front-end or to the target device.
@@ -182,15 +191,16 @@ impl Bridge {
 }
 
 pub mod service {
-    use super::{Bridge, BridgeError};
+    use super::{Bridge, BridgeError, BRIDGE_REF};
 
     #[tokio::main]
     pub async fn connect(fd: i32) -> ConnectionStatus {
         let id = rand::random();
 
         match Bridge::new(id, fd) {
-            Ok(mut bridge) => {
-                if let Err(_err) = bridge.connect().await {
+            Ok(bridge) => {
+                BRIDGE_REF.lock().await.replace(bridge);
+                if let Err(_err) = BRIDGE_REF.lock().await.as_mut().unwrap().connect().await {
                     match _err {
                         BridgeError::BridgeClosed => ConnectionStatus::BridgeClosed,
                         BridgeError::ConnectionRefused => ConnectionStatus::Refused,
@@ -217,8 +227,44 @@ pub mod service {
         }
     }
 
+    /// Disconnects from the currently existing bridge.
+    #[tokio::main]
     pub async fn disconnect() -> ConnectionStatus {
-       unimplemented!() 
+        let mut bridge_ref = BRIDGE_REF.lock().await;
+
+        if let Some(bridge) = bridge_ref.as_mut() {
+            match bridge.disconnect().await {
+                Ok(_) => {
+                    *bridge_ref = None;
+                    ConnectionStatus::Disconnected
+                },
+                Err(_err) => match _err {
+                    BridgeError::BridgeClosed => ConnectionStatus::BridgeClosed,
+                    BridgeError::ContextError => ConnectionStatus::InnerError,
+                    e @ _ => {
+                        log::error!("Unhandled error has occurred: {:#?}", e);
+                        unreachable!()
+                    },
+                },
+            }
+        } else {
+            ConnectionStatus::Disconnected
+        }
+    }
+
+    /// Gets info about a current connection.
+    #[tokio::main]
+    pub async fn get_conn_info() -> String {
+        let mut bridge_ref = BRIDGE_REF.lock().await;
+
+        if let Some(bridge) = bridge_ref.as_mut() {
+            let devd = bridge.device.lock().await.device();
+            let devdc = &bridge.dev_desc;
+            format!("Bus: {:03}, Addr: {:03}, ID: {:04x}:{:04x}\nMax supported USB version: {}.", 
+                devd.bus_number(), devd.address(), devdc.vendor_id(), devdc.product_id(), devdc.usb_version());        
+        }
+
+        String::new()
     }
 
     /// Local enum to represent the current status of the connection.

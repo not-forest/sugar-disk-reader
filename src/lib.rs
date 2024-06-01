@@ -70,7 +70,7 @@ pub mod android {
     use android_logger::{Config, FilterBuilder};
     use sugar::auth::profile::{change_mail, change_pass};
     use sugar::auth::service::{fast_login, login, logout, signup};
-    use sugar::conn::service::{connect, disconnect};
+    use sugar::conn::service::{connect, disconnect, get_conn_info};
     use sugar::auth::usrsrv::UserServiceStatus;
     use sugar::storage::{FILES_DIR, CACHE_DIR, EXT_FILES_DIR, EXT_CACHE_DIR};
 
@@ -211,12 +211,32 @@ pub mod android {
 
     #[no_mangle]
     pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_connect(
-        mut env: JNIEnv,
+        env: JNIEnv,
         _: JClass,
         file_desc: i32,
     ) -> u8 {
         log::info!("Begin: connect");
 
         connect(file_desc) as u8
+    }
+
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_disconnect(
+    ) -> u8 {
+        log::info!("Begin: disconnect");
+
+        disconnect() as u8
+    }
+    
+    #[no_mangle]
+    pub extern fn Java_com_notforest_sugar_ui_home_TargetFragment_conn_info(
+        mut env: JNIEnv,
+        _: JClass
+    ) -> jstring {
+        log::info!("Begin: connection info.");
+
+        let st = get_conn_info();
+        env.new_string(st).expect("Unable to create new Java string from environment.")
+            .into_raw()
     }
 }
